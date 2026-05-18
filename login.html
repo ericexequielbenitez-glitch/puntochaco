@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iniciar sesión — PuntoChaco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp }                from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCibGsSHDHn6c8VXLzUlqeKXpaxibfpVuc",
+    authDomain: "chacoemprende-df731.firebaseapp.com",
+    projectId: "chacoemprende-df731",
+    storageBucket: "chacoemprende-df731.firebasestorage.app",
+    messagingSenderId: "871612466602",
+    appId: "1:871612466602:web:fe62a4f01c38d5b2c417d3"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // Si ya está logueado redirigir
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const snap = await getDoc(doc(db, "usuarios", user.uid));
+      if (snap.exists()) {
+        const rol = snap.data().rol;
+        redirigirPorRol(rol);
+      }
+    }
+  });
+
+  function redirigirPorRol(rol) {
+    if (rol === "admin")    window.location.href = "admin.html";
+    else if (rol === "vendedor") window.location.href = "dashboard.html";
+    else                    window.location.href = "index.html";
+  }
+
+  // ─── LOGIN ───
+  window.manejarLogin = async function(e) {
+    e.preventDefault();
+    limpiarErrores();
+
+    const email    = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!email)    return mostrarError("email", "Ingresá tu email");
+    if (!password) return mostrarError("password", "Ingresá tu contraseña");
+
+    setBtnCargando(true, "Ingresando...");
+
+    try {
+      const credencial = await signInWithEmailAndPassword(auth, email, password);
+      const uid = credencial.user.uid;
+
+      // Obtener rol del usuario
+      const snap = await getDoc(doc(db, "usuarios", uid));
+      if (!snap.exists()) {
+        setBtnCargando(false);
+        return mostrarBanner("No se encontraron datos del usuario. Contactá soporte.");
+      }
+
+      const datos = snap.data();
+
+      // Verificar si está baneado
+      if (datos.baneado) {
+        await auth.signOut();
+        setBtnCargando(false);
+        return mostrarBanner("Tu cuenta fue suspendida. Contactá al administrador.");
+      }
+
+      // Mostrar éxito y redirigir
+      mostrarExito(datos.nombre);
+      setTimeout(() => redirigirPorRol(datos.rol), 2000);
+
+    } catch (err) {
+      setBtnCargando(false);
+      const mensajes = {
+        "auth/user-not-found":       "No existe una cuenta con ese email.",
+        "auth/wrong-password":       "La contraseña es incorrecta.",
+        "auth/invalid-credential":   "Email o contraseña incorrectos.",
+        "auth/invalid-email":        "El email no es válido.",
+        "auth/too-many-requests":    "Demasiados intentos. Esperá unos minutos e intentá de nuevo.",
+        "auth/network-request-failed": "Error de conexión. Revisá tu internet.",
+        "auth/user-disabled":        "Tu cuenta fue deshabilitada."
+      };
+      mostrarBanner(mensajes[err.code] || "Error al iniciar sesión. Intentá de nuevo.");
+    }
+  };
+
+  // ─── RECUPERAR CONTRASEÑA ───
+  window.recuperarPassword = async function() {
+    const email = document.getElementById("email").value.trim();
+    if (!email) {
+      mostrarError("email", "Ingresá tu email para recuperar la contraseña");
+      return;
+    }
+
+    const btn = document.getElementById("btnRecuperar");
+    btn.textContent = "Enviando...";
+    btn.disabled = true;
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      mostrarToast("Te enviamos un email para recuperar tu contraseña.");
+    } catch (err) {
+      const mensajes = {
+        "auth/user-not-found":  "No existe una cuenta con ese email.",
+        "auth/invalid-email":   "El email no es válido."
+      };
+      mostrarBanner(mensajes[err.code] || "Error al enviar el email.");
+    } finally {
+      btn.textContent = "Olvidé mi contraseña";
+      btn.disabled = false;
+    }
+  };
+
+  // ─── UI HELPERS ───
+  window.togglePassword = function() {
+    const input = document.getElementById("password");
+    const icono = document.getElementById("iconoOjo");
+    if (input.type === "password") {
+      input.type = "text";
+      icono.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+    } else {
+      input.type = "password";
+      icono.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+    }
+  };
+
+  function mostrarError(campo, mensaje) {
+    const err   = document.getElementById("err-" + campo);
+    const input = document.getElementById(campo);
+    if (err)   { err.querySelector("span").textContent = mensaje; err.style.display = "flex"; }
+    if (input) input.classList.add("campo-error");
+  }
+
+  function limpiarErrores() {
+    document.querySelectorAll(".field-error").forEach(e => e.style.display = "none");
+    document.querySelectorAll(".campo-error").forEach(e => e.classList.remove("campo-error"));
+    document.getElementById("banner-error").style.display = "none";
+  }
+
+  function mostrarBanner(msg) {
+    const b = document.getElementById("banner-error");
+    document.getElementById("banner-texto").textContent = msg;
+    b.style.display = "flex";
+    b.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function setBtnCargando(cargando, texto = "Ingresar") {
+    const btn = document.getElementById("btnSubmit");
+    btn.disabled = cargando;
+    document.getElementById("btnTexto").textContent = texto;
+    document.getElementById("spinner").style.display = cargando ? "block" : "none";
+  }
+
+  function mostrarExito(nombre) {
+    document.getElementById("exitoNombre").textContent = nombre || "de vuelta";
+    document.getElementById("pantallaExito").style.display = "flex";
+  }
+
+  function mostrarToast(msg) {
+    const toast = document.getElementById("toast");
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 4000);
+  }
+</script>
+
+<style>
+:root {
+  --blanco: #FFFFFF;
+  --fondo: #F4F9FC;
+  --celeste: #2AACE2;
+  --celeste-claro: #D6EEF8;
+  --celeste-suave: #EBF6FD;
+  --verde: #3BAF6E;
+  --verde-suave: #EAF8F1;
+  --texto: #0F2535;
+  --texto-2: #3A5A72;
+  --texto-3: #7A9BB0;
+  --borde: #D8EBF5;
+  --borde-2: #C2DCF0;
+  --error: #FF3B3B;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── NAV ── */
+nav {
+  height: 64px;
+  background: var(--blanco);
+  border-bottom: 1.5px solid var(--borde);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  flex-shrink: 0;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo-icon {
+  width: 34px; height: 34px; border-radius: 10px;
+  position: relative; overflow: hidden; background: var(--celeste); flex-shrink: 0;
+}
+.logo-icon .sky    { position:absolute; inset:0; background:linear-gradient(180deg,#2AACE2,#63C6EC); }
+.logo-icon .sol    { position:absolute; width:11px; height:11px; background:#FFE566; border-radius:50%; top:6px; right:6px; box-shadow:0 0 6px rgba(255,229,102,0.6); }
+.logo-icon .tierra { position:absolute; bottom:0; left:0; right:0; height:12px; background:var(--verde); border-radius:0 0 5px 5px; }
+.logo-icon .arbol  { position:absolute; bottom:9px; left:7px; width:4px; height:8px; background:#27865A; border-radius:2px 2px 0 0; }
+.logo-icon .arbol::before { content:''; position:absolute; bottom:3px; left:-3px; width:10px; height:7px; background:var(--verde); border-radius:50% 50% 40% 40%; }
+.logo-nombre { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:16px; color:var(--texto); letter-spacing:-0.03em; display:block; }
+.logo-sub    { font-size:10px; color:var(--texto-3); font-weight:500; letter-spacing:0.08em; text-transform:uppercase; }
+.nav-link    { font-size:14px; color:var(--texto-2); text-decoration:none; font-weight:500; }
+.nav-link strong { color: var(--celeste); }
+.nav-link:hover  { color: var(--celeste); }
+
+/* ── LAYOUT ── */
+.page-wrap {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 480px;
+  min-height: calc(100vh - 64px);
+}
+
+/* PANEL IZQUIERDO — decorativo */
+.panel-izq {
+  background: linear-gradient(160deg, var(--celeste) 0%, #1E7FB5 50%, #27865A 100%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 48px;
+  position: relative; overflow: hidden;
+}
+
+.panel-izq::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.panel-izq::after {
+  content: '';
+  position: absolute;
+  bottom: -80px; left: -80px;
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 70%);
+}
+
+.panel-deco { position: relative; z-index: 1; text-align: center; }
+
+.panel-logo-grande {
+  width: 80px; height: 80px;
+  border-radius: 22px;
+  position: relative; overflow: hidden;
+  margin: 0 auto 32px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+}
+.panel-logo-grande .sky    { position:absolute; inset:0; background:linear-gradient(180deg,#63C6EC,#2AACE2); }
+.panel-logo-grande .sol    { position:absolute; width:22px; height:22px; background:#FFE566; border-radius:50%; top:12px; right:14px; box-shadow:0 0 12px rgba(255,229,102,0.7); }
+.panel-logo-grande .tierra { position:absolute; bottom:0; left:0; right:0; height:24px; background:var(--verde); border-radius:0 0 12px 12px; }
+.panel-logo-grande .arbol  { position:absolute; bottom:18px; left:14px; width:8px; height:16px; background:#27865A; border-radius:3px 3px 0 0; }
+.panel-logo-grande .arbol::before { content:''; position:absolute; bottom:6px; left:-6px; width:20px; height:14px; background:var(--verde); border-radius:50% 50% 40% 40%; }
+
+.panel-deco h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px; font-weight: 800;
+  color: var(--blanco); margin-bottom: 12px;
+  line-height: 1.2;
+}
+.panel-deco p {
+  font-size: 16px; color: rgba(255,255,255,0.7);
+  line-height: 1.65; max-width: 340px; margin: 0 auto;
+}
+
+.panel-stats {
+  display: flex; gap: 0;
+  margin-top: 48px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.panel-stat {
+  flex: 1; padding: 16px 20px; text-align: center;
+  border-right: 1px solid rgba(255,255,255,0.1);
+}
+.panel-stat:last-child { border-right: none; }
+.panel-stat-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px; font-weight: 700;
+  color: var(--blanco);
+}
+.panel-stat-lbl {
+  font-size: 11px; color: rgba(255,255,255,0.55);
+  margin-top: 2px; font-weight: 500;
+}
+
+/* PANEL DERECHO — formulario */
+.panel-form {
+  background: var(--blanco);
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px 48px;
+  border-left: 1.5px solid var(--borde);
+}
+
+.form-wrap { width: 100%; max-width: 360px; }
+
+.form-titulo {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; font-weight: 800;
+  color: var(--texto); margin-bottom: 6px;
+}
+.form-sub {
+  font-size: 15px; color: var(--texto-2);
+  margin-bottom: 32px;
+}
+
+/* BANNER ERROR */
+.banner-error {
+  display: none;
+  background: rgba(255,59,59,0.06);
+  border: 1.5px solid rgba(255,59,59,0.2);
+  border-radius: var(--r-sm);
+  padding: 13px 15px;
+  margin-bottom: 18px;
+  align-items: flex-start; gap: 10px;
+}
+.banner-error svg { width:17px; height:17px; stroke:var(--error); flex-shrink:0; margin-top:1px; }
+.banner-error p   { font-size:13px; font-weight:500; color:var(--error); line-height:1.5; }
+
+/* GRUPOS */
+.grupo { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+label  { font-size: 13px; font-weight: 600; color: var(--texto-2); }
+
+.input-wrap { position: relative; }
+.input-wrap > svg:first-of-type {
+  position: absolute; left: 12px; top: 50%;
+  transform: translateY(-50%);
+  width: 15px; height: 15px; stroke: var(--texto-3);
+  pointer-events: none;
+}
+
+input[type="email"], input[type="password"], input[type="text"] {
+  width: 100%; height: 46px;
+  padding: 0 44px 0 38px;
+  background: var(--fondo);
+  border: 1.5px solid transparent;
+  border-radius: var(--r-sm);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; color: var(--texto);
+  outline: none; transition: all 0.2s;
+}
+input:focus {
+  border-color: var(--celeste);
+  background: var(--blanco);
+  box-shadow: 0 0 0 3px rgba(42,172,226,0.08);
+}
+.campo-error {
+  border-color: var(--error) !important;
+  background: rgba(255,59,59,0.03) !important;
+}
+
+/* OJO PASSWORD */
+.btn-ojo {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  padding: 2px; color: var(--texto-3);
+  transition: color 0.2s;
+}
+.btn-ojo:hover { color: var(--celeste); }
+.btn-ojo svg   { width: 17px; height: 17px; }
+
+.field-error {
+  display: none;
+  align-items: center; gap: 4px;
+  font-size: 12px; color: var(--error);
+}
+.field-error svg { width: 12px; height: 12px; }
+
+/* OLVIDÉ PASSWORD */
+.fila-pass {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 5px;
+}
+.btn-recuperar {
+  background: none; border: none; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; color: var(--celeste);
+  font-weight: 600; padding: 0;
+  transition: opacity 0.2s;
+}
+.btn-recuperar:hover { opacity: 0.7; }
+
+/* BTN SUBMIT */
+.btn-submit {
+  width: 100%; height: 50px;
+  background: var(--celeste); color: var(--blanco);
+  border: none; border-radius: 100px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 4px 16px rgba(42,172,226,0.3);
+  margin-top: 20px;
+}
+.btn-submit:hover:not(:disabled) {
+  background: #1E9BD0;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(42,172,226,0.4);
+}
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* SPINNER */
+.spinner {
+  display: none;
+  width: 18px; height: 18px;
+  border: 2.5px solid rgba(255,255,255,0.3);
+  border-top-color: var(--blanco);
+  border-radius: 50%;
+  animation: girar 0.7s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+
+/* DIVIDER OR */
+.divider-or {
+  display: flex; align-items: center; gap: 12px;
+  margin: 22px 0;
+}
+.divider-or::before, .divider-or::after {
+  content: ''; flex: 1; height: 1px;
+  background: var(--borde);
+}
+.divider-or span {
+  font-size: 12px; color: var(--texto-3); font-weight: 500;
+}
+
+/* REGISTRO LINK */
+.registro-link {
+  text-align: center; margin-top: 8px;
+  font-size: 14px; color: var(--texto-2);
+}
+.registro-link a { color: var(--celeste); font-weight: 700; text-decoration: none; }
+.registro-link a:hover { text-decoration: underline; }
+
+/* PANTALLA ÉXITO */
+.pantalla-exito {
+  display: none;
+  position: fixed; inset: 0;
+  background: var(--blanco); z-index: 300;
+  align-items: center; justify-content: center;
+  flex-direction: column; text-align: center; padding: 24px;
+}
+.exito-icono {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: var(--verde-suave);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 24px;
+  animation: popIn 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn { from { transform:scale(0); } to { transform:scale(1); } }
+.exito-icono svg { width: 36px; height: 36px; stroke: var(--verde); }
+.pantalla-exito h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px; margin-bottom: 10px;
+}
+.pantalla-exito p { font-size: 16px; color: var(--texto-2); }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--texto); color: var(--blanco);
+  padding: 12px 24px; border-radius: 100px;
+  font-size: 14px; font-weight: 500;
+  opacity: 0; transition: all 0.35s ease;
+  z-index: 400; white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.toast.show {
+  opacity: 1; transform: translateX(-50%) translateY(0);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  .page-wrap { grid-template-columns: 1fr; }
+  .panel-izq { display: none; }
+  .panel-form {
+    padding: 36px 24px;
+    border-left: none;
+    align-items: flex-start;
+  }
+  .form-wrap { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- PANTALLA ÉXITO -->
+<div class="pantalla-exito" id="pantallaExito">
+  <div class="exito-icono">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <h2>¡Bienvenido de vuelta, <span id="exitoNombre"></span>!</h2>
+  <p>Estamos preparando tu cuenta...</p>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png"
+         alt="PuntoChaco" style="height:40px; width:auto; display:block;">
+  </a>
+  <a href="registro.html" class="nav-link">¿No tenés cuenta? <strong>Registrate gratis</strong></a>
+</nav>
+
+<!-- LAYOUT PRINCIPAL -->
+<div class="page-wrap">
+
+  <!-- PANEL IZQUIERDO -->
+  <div class="panel-izq">
+    <div class="panel-deco">
+      <div class="panel-logo-grande" style="background:transparent; box-shadow:none; overflow:visible;">
+        <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png"
+             alt="PuntoChaco" style="width:100%; height:100%; object-fit:contain;">
+      </div>
+      <h2>La plataforma de emprendedores del Chaco</h2>
+      <p>Conectamos compradores y vendedores de toda la provincia. Gratis, simple y moderno.</p>
+
+      <div class="panel-stats">
+        <div class="panel-stat">
+          <div class="panel-stat-num">100%</div>
+          <div class="panel-stat-lbl">Gratuito</div>
+        </div>
+        <div class="panel-stat">
+          <div class="panel-stat-num">15+</div>
+          <div class="panel-stat-lbl">Categorías</div>
+        </div>
+        <div class="panel-stat">
+          <div class="panel-stat-num">60+</div>
+          <div class="panel-stat-lbl">Localidades</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL FORMULARIO -->
+  <div class="panel-form">
+    <div class="form-wrap">
+
+      <div class="form-titulo">Bienvenido</div>
+      <div class="form-sub">Ingresá a tu cuenta de PuntoChaco</div>
+
+      <!-- BANNER ERROR -->
+      <div class="banner-error" id="banner-error">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p id="banner-texto"></p>
+      </div>
+
+      <form id="formLogin" onsubmit="manejarLogin(event)" novalidate>
+
+        <!-- EMAIL -->
+        <div class="grupo">
+          <label for="email">Email</label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input type="email" id="email" placeholder="tu@email.com" autocomplete="email">
+          </div>
+          <div class="field-error" id="err-email">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+            <span></span>
+          </div>
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="grupo">
+          <div class="fila-pass">
+            <label for="password">Contraseña</label>
+            <button type="button" class="btn-recuperar" id="btnRecuperar"
+              onclick="recuperarPassword()">Olvidé mi contraseña</button>
+          </div>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input type="password" id="password" placeholder="Tu contraseña" autocomplete="current-password">
+            <button type="button" class="btn-ojo" onclick="togglePassword()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="iconoOjo">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <div class="field-error" id="err-password">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+            <span></span>
+          </div>
+        </div>
+
+        <!-- SUBMIT -->
+        <button type="submit" class="btn-submit" id="btnSubmit">
+          <div class="spinner" id="spinner"></div>
+          <span id="btnTexto">Ingresar</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+
+      </form>
+
+      <div class="divider-or"><span>¿No tenés cuenta?</span></div>
+
+      <div class="registro-link">
+        <a href="registro.html"
+          style="display:flex; align-items:center; justify-content:center; gap:8px; height:46px; border:1.5px solid var(--borde-2); border-radius:100px; color:var(--texto-2); font-size:14px; font-weight:600; text-decoration:none; transition:all 0.2s;"
+          onmouseover="this.style.borderColor='var(--celeste)';this.style.color='var(--celeste)';this.style.background='var(--celeste-suave)'"
+          onmouseout="this.style.borderColor='var(--borde-2)';this.style.color='var(--texto-2)';this.style.background='transparent'">
+          Crear cuenta gratis
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
