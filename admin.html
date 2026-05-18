@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — PuntoChaco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, getDocs,
+           updateDoc, deleteDoc, query, where, orderBy, addDoc, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCibGsSHDHn6c8VXLzUlqeKXpaxibfpVuc",
+    authDomain: "chacoemprende-df731.firebaseapp.com",
+    projectId: "chacoemprende-df731",
+    storageBucket: "chacoemprende-df731.firebasestorage.app",
+    messagingSenderId: "871612466602",
+    appId: "1:871612466602:web:fe62a4f01c38d5b2c417d3"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // ── Auth guard ADMIN ──
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = "login.html"; return; }
+    const snap = await getDoc(doc(db, "usuarios", user.uid));
+    if (!snap.exists() || snap.data().rol !== "admin") {
+      window.location.href = "index.html"; return;
+    }
+    document.getElementById("adminNombre").textContent = snap.data().nombre || "Admin";
+    document.getElementById("cargando").style.display = "none";
+    document.getElementById("appContent").style.display = "flex";
+    await cargarTodo();
+  });
+
+  async function cargarTodo() {
+    await Promise.all([
+      cargarMetricas(),
+      cargarNegocios(),
+      cargarPublicaciones(),
+      cargarUsuarios(),
+      cargarReportes(),
+      cargarCategorias()
+    ]);
+  }
+
+  // ── MÉTRICAS ──
+  async function cargarMetricas() {
+    const [usSnap, negSnap, pubSnap] = await Promise.all([
+      getDocs(collection(db, "usuarios")),
+      getDocs(collection(db, "negocios")),
+      getDocs(collection(db, "publicaciones"))
+    ]);
+    document.getElementById("mUsuarios").textContent    = usSnap.size;
+    document.getElementById("mNegocios").textContent    = negSnap.size;
+    document.getElementById("mPublicaciones").textContent = pubSnap.size;
+    const pendNeg = negSnap.docs.filter(d => !d.data().aprobado).length;
+    const pendPub = pubSnap.docs.filter(d => !d.data().aprobado).length;
+    document.getElementById("mPendientes").textContent  = pendNeg + pendPub;
+  }
+
+  // ── NEGOCIOS ──
+  let todosNegocios = [];
+  async function cargarNegocios() {
+    const snap = await getDocs(collection(db, "negocios"));
+    todosNegocios = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderNegocios(todosNegocios);
+  }
+
+  function renderNegocios(lista) {
+    const tbody = document.getElementById("tbodyNegocios");
+    if (lista.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--texto-3);">No hay negocios registrados</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = lista.map(n => `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${n.logoUrl ? `<img src="${n.logoUrl}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;">` :
+              `<div style="width:36px;height:36px;border-radius:8px;background:var(--fondo-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--texto-3);">${(n.nombre||'?')[0]}</div>`}
+            <div>
+              <div style="font-weight:600;font-size:14px;">${n.nombre || '-'}</div>
+              <div style="font-size:12px;color:var(--texto-3);">${n.categoria || ''}</div>
+            </div>
+          </div>
+        </td>
+        <td style="font-size:13px;">${n.localidad || '-'}</td>
+        <td><span class="badge ${n.aprobado ? 'badge-ok' : 'badge-warn'}">${n.aprobado ? 'Aprobado' : 'Pendiente'}</span></td>
+        <td><span class="badge ${n.destacado ? 'badge-ok' : 'badge-gray'}">${n.destacado ? 'Sí' : 'No'}</span></td>
+        <td style="font-size:13px;">${n.whatsapp || '-'}</td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${!n.aprobado ? `<button onclick="aprobarNegocio('${n.id}')" class="btn-accion btn-ok">Aprobar</button>` : ''}
+            ${n.aprobado  ? `<button onclick="rechazarNegocio('${n.id}')" class="btn-accion btn-warn">Rechazar</button>` : ''}
+            <button onclick="toggleDestacado('${n.id}',${!n.destacado})" class="btn-accion btn-info">${n.destacado ? 'Quitar dest.' : 'Destacar'}</button>
+            <button onclick="eliminarNegocio('${n.id}')" class="btn-accion btn-del">Eliminar</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  window.aprobarNegocio = async (id) => {
+    await updateDoc(doc(db, "negocios", id), { aprobado: true });
+    mostrarToast("Negocio aprobado", "ok");
+    await cargarNegocios(); await cargarMetricas();
+  };
+  window.rechazarNegocio = async (id) => {
+    await updateDoc(doc(db, "negocios", id), { aprobado: false });
+    mostrarToast("Negocio rechazado", "ok");
+    await cargarNegocios();
+  };
+  window.toggleDestacado = async (id, val) => {
+    await updateDoc(doc(db, "negocios", id), { destacado: val });
+    mostrarToast(val ? "Marcado como destacado" : "Quitado de destacados", "ok");
+    await cargarNegocios();
+  };
+  window.eliminarNegocio = async (id) => {
+    if (!confirm("¿Eliminar este negocio? Esta acción no se puede deshacer.")) return;
+    await deleteDoc(doc(db, "negocios", id));
+    mostrarToast("Negocio eliminado", "ok");
+    await cargarNegocios(); await cargarMetricas();
+  };
+
+  window.filtrarNegocios = function(estado) {
+    document.querySelectorAll(".filtro-btn").forEach(b => b.classList.remove("activo"));
+    event.target.classList.add("activo");
+    if (estado === "todos") renderNegocios(todosNegocios);
+    else if (estado === "pendiente") renderNegocios(todosNegocios.filter(n => !n.aprobado));
+    else if (estado === "aprobado")  renderNegocios(todosNegocios.filter(n => n.aprobado));
+    else if (estado === "destacado") renderNegocios(todosNegocios.filter(n => n.destacado));
+  };
+
+  // ── PUBLICACIONES ──
+  let todasPubs = [];
+  async function cargarPublicaciones() {
+    const snap = await getDocs(collection(db, "publicaciones"));
+    todasPubs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderPublicaciones(todasPubs);
+  }
+
+  function renderPublicaciones(lista) {
+    const tbody = document.getElementById("tbodyPublicaciones");
+    if (lista.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--texto-3);">No hay publicaciones</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = lista.map(p => `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;">` :
+              `<div style="width:40px;height:40px;border-radius:8px;background:var(--fondo-2);"></div>`}
+            <div>
+              <div style="font-weight:600;font-size:14px;">${p.titulo || '-'}</div>
+              <div style="font-size:12px;color:var(--texto-3);">$${Number(p.precio||0).toLocaleString('es-AR')}</div>
+            </div>
+          </div>
+        </td>
+        <td style="font-size:13px;">${p.categoria || '-'}</td>
+        <td style="font-size:13px;">${p.nombreNegocio || '-'}</td>
+        <td><span class="badge ${p.aprobado ? 'badge-ok' : 'badge-warn'}">${p.aprobado ? 'Aprobada' : 'Pendiente'}</span></td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            ${!p.aprobado ? `<button onclick="aprobarPub('${p.id}')" class="btn-accion btn-ok">Aprobar</button>` : ''}
+            <button onclick="eliminarPub('${p.id}')" class="btn-accion btn-del">Eliminar</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  window.aprobarPub = async (id) => {
+    await updateDoc(doc(db, "publicaciones", id), { aprobado: true });
+    mostrarToast("Publicación aprobada", "ok");
+    await cargarPublicaciones(); await cargarMetricas();
+  };
+  window.eliminarPub = async (id) => {
+    if (!confirm("¿Eliminar esta publicación?")) return;
+    await deleteDoc(doc(db, "publicaciones", id));
+    mostrarToast("Publicación eliminada", "ok");
+    await cargarPublicaciones(); await cargarMetricas();
+  };
+
+  window.filtrarPubs = function(estado) {
+    document.querySelectorAll(".filtro-btn-pub").forEach(b => b.classList.remove("activo"));
+    event.target.classList.add("activo");
+    if (estado === "todos") renderPublicaciones(todasPubs);
+    else if (estado === "pendiente") renderPublicaciones(todasPubs.filter(p => !p.aprobado));
+    else if (estado === "aprobada")  renderPublicaciones(todasPubs.filter(p => p.aprobado));
+  };
+
+  // ── USUARIOS ──
+  async function cargarUsuarios() {
+    const snap = await getDocs(collection(db, "usuarios"));
+    const tbody = document.getElementById("tbodyUsuarios");
+    const usuarios = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    tbody.innerHTML = usuarios.map(u => `
+      <tr>
+        <td>
+          <div style="font-weight:600;font-size:14px;">${u.nombre || ''} ${u.apellido || ''}</div>
+          <div style="font-size:12px;color:var(--texto-3);">${u.email || ''}</div>
+        </td>
+        <td><span class="badge badge-info">${u.rol || '-'}</span></td>
+        <td style="font-size:13px;">${u.edad || '-'} años</td>
+        <td><span class="badge ${u.baneado ? 'badge-del' : 'badge-ok'}">${u.baneado ? 'Baneado' : 'Activo'}</span></td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button onclick="toggleBan('${u.id}',${!u.baneado})" class="btn-accion ${u.baneado ? 'btn-ok' : 'btn-del'}">
+              ${u.baneado ? 'Desbanear' : 'Banear'}
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  window.toggleBan = async (id, val) => {
+    await updateDoc(doc(db, "usuarios", id), { baneado: val });
+    mostrarToast(val ? "Usuario baneado" : "Usuario desbaneado", "ok");
+    await cargarUsuarios();
+  };
+
+  // ── REPORTES ──
+  async function cargarReportes() {
+    const snap = await getDocs(collection(db, "reportes"));
+    const tbody = document.getElementById("tbodyReportes");
+    if (snap.empty) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--texto-3);">No hay reportes pendientes</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = snap.docs.map(d => {
+      const r = d.data();
+      return `
+        <tr>
+          <td style="font-size:13px;">${r.tipo || '-'}</td>
+          <td style="font-size:13px;">${r.razon || '-'}</td>
+          <td><span class="badge ${r.estado === 'resuelto' ? 'badge-ok' : 'badge-warn'}">${r.estado || 'pendiente'}</span></td>
+          <td>
+            <button onclick="resolverReporte('${d.id}')" class="btn-accion btn-ok">Resolver</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  window.resolverReporte = async (id) => {
+    await updateDoc(doc(db, "reportes", id), { estado: "resuelto" });
+    mostrarToast("Reporte marcado como resuelto", "ok");
+    await cargarReportes();
+  };
+
+  // ── CATEGORÍAS ──
+  async function cargarCategorias() {
+    const snap = await getDocs(collection(db, "categorias"));
+    const lista = document.getElementById("listaCategorias");
+    if (snap.empty) {
+      lista.innerHTML = `<div style="padding:24px;text-align:center;color:var(--texto-3);font-size:14px;">No hay categorías personalizadas aún</div>`;
+      return;
+    }
+    lista.innerHTML = snap.docs.map(d => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--borde);">
+        <div>
+          <span style="font-size:14px;font-weight:600;">${d.data().nombre}</span>
+          <span class="badge badge-info" style="margin-left:8px;">${d.data().tipo || ''}</span>
+        </div>
+        <button onclick="eliminarCategoria('${d.id}')" class="btn-accion btn-del">Eliminar</button>
+      </div>
+    `).join('');
+  }
+
+  window.guardarCategoria = async function(e) {
+    e.preventDefault();
+    const nombre = document.getElementById("catNombre").value.trim();
+    const tipo   = document.getElementById("catTipo").value;
+    if (!nombre || !tipo) return;
+    await addDoc(collection(db, "categorias"), { nombre, tipo, activo: true, creadoEn: serverTimestamp() });
+    mostrarToast("Categoría creada", "ok");
+    document.getElementById("formCategoria").reset();
+    await cargarCategorias();
+  };
+
+  window.eliminarCategoria = async (id) => {
+    if (!confirm("¿Eliminar esta categoría?")) return;
+    await deleteDoc(doc(db, "categorias", id));
+    mostrarToast("Categoría eliminada", "ok");
+    await cargarCategorias();
+  };
+
+  // ── UI ──
+  window.mostrarSeccion = function(id) {
+    document.querySelectorAll(".seccion").forEach(s => s.style.display = "none");
+    document.getElementById("sec-" + id).style.display = "block";
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("activo"));
+    document.querySelector(`[data-sec="${id}"]`)?.classList.add("activo");
+    if (window.innerWidth < 900) document.getElementById("sidebar").classList.remove("abierto");
+  };
+
+  window.toggleSidebar = function() {
+    document.getElementById("sidebar").classList.toggle("abierto");
+  };
+
+  window.cerrarSesion = async function() {
+    await signOut(auth);
+    window.location.href = "login.html";
+  };
+
+  function mostrarToast(msg, tipo = "ok") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast show " + tipo;
+    setTimeout(() => t.className = "toast", 3000);
+  }
+
+  window.buscarNegocios = function(val) {
+    const filtrado = todosNegocios.filter(n =>
+      (n.nombre||'').toLowerCase().includes(val.toLowerCase()) ||
+      (n.localidad||'').toLowerCase().includes(val.toLowerCase())
+    );
+    renderNegocios(filtrado);
+  };
+</script>
+
+<style>
+:root {
+  --blanco:#FFFFFF; --fondo:#F4F9FC; --fondo-2:#EBF5FB;
+  --celeste:#5BADD6; --celeste-claro:#C8E6F5; --celeste-suave:#EBF5FC;
+  --verde:#3A8F5A; --verde-suave:#EAF5EF;
+  --texto:#1A2B4A; --texto-2:#3A5A72; --texto-3:#7A9BB0;
+  --borde:#D8EBF5; --error:#FF3B3B;
+  --r-sm:10px; --r-md:16px; --r-lg:24px;
+  --sombra:0 4px 20px rgba(42,172,226,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--fondo);color:var(--texto);-webkit-font-smoothing:antialiased;}
+
+#cargando{position:fixed;inset:0;background:var(--blanco);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:999;}
+.spinner-grande{width:48px;height:48px;border:4px solid var(--celeste-claro);border-top-color:var(--celeste);border-radius:50%;animation:girar 0.8s linear infinite;}
+@keyframes girar{to{transform:rotate(360deg);}}
+#cargando p{font-size:14px;color:var(--texto-3);}
+
+#appContent{display:none;min-height:100vh;}
+.layout{display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{width:240px;flex-shrink:0;background:var(--texto);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;transition:transform 0.3s;}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.sidebar-logo img{height:36px;width:auto;}
+.sidebar-user{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px;}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:var(--error);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--blanco);flex-shrink:0;}
+.user-nombre{font-size:13px;font-weight:700;color:var(--blanco);}
+.user-rol{font-size:11px;color:rgba(255,255,255,0.4);}
+.sidebar-nav{flex:1;padding:12px 0;}
+.nav-grupo-titulo{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.25);padding:8px 20px 4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:13px;font-weight:500;color:rgba(255,255,255,0.55);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;}
+.nav-item:hover{color:var(--blanco);background:rgba(255,255,255,0.04);}
+.nav-item.activo{color:var(--blanco);background:rgba(91,173,214,0.15);border-left-color:var(--celeste);}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+.sidebar-bottom{padding:12px 0;border-top:1px solid rgba(255,255,255,0.08);}
+
+/* MAIN */
+.main-content{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{height:64px;background:var(--blanco);border-bottom:1.5px solid var(--borde);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;}
+.topbar-titulo{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;}
+.admin-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(255,59,59,0.08);border:1px solid rgba(255,59,59,0.2);border-radius:100px;font-size:12px;font-weight:700;color:var(--error);}
+.btn-hamburger{display:none;background:none;border:none;cursor:pointer;padding:4px;}
+.btn-hamburger svg{width:22px;height:22px;stroke:var(--texto);}
+.content-area{flex:1;padding:28px;}
+.seccion{display:none;}
+
+/* MÉTRICAS */
+.metricas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px;}
+.met-card{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);padding:20px 22px;display:flex;align-items:center;gap:14px;}
+.met-icono{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.met-icono.cel{background:var(--celeste-suave);}
+.met-icono.ver{background:var(--verde-suave);}
+.met-icono.err{background:rgba(255,59,59,0.08);}
+.met-icono.info{background:rgba(255,152,0,0.1);}
+.met-icono svg{width:22px;height:22px;}
+.met-num{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;}
+.met-lbl{font-size:12px;color:var(--texto-3);font-weight:500;}
+
+/* TABLA */
+.tabla-wrap{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;}
+.tabla-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1.5px solid var(--borde);flex-wrap:wrap;gap:10px;}
+.tabla-titulo{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;}
+.filtros{display:flex;gap:6px;flex-wrap:wrap;}
+.filtro-btn,.filtro-btn-pub{padding:5px 14px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--borde);background:transparent;color:var(--texto-2);transition:all 0.2s;}
+.filtro-btn:hover,.filtro-btn-pub:hover,.filtro-btn.activo,.filtro-btn-pub.activo{background:var(--celeste);color:var(--blanco);border-color:var(--celeste);}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--fondo);}
+th{padding:10px 16px;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--texto-3);text-align:left;}
+td{padding:12px 16px;border-top:1px solid var(--borde);vertical-align:middle;}
+tr:hover td{background:var(--fondo);}
+
+/* BADGES */
+.badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;}
+.badge-ok{background:var(--verde-suave);color:var(--verde);}
+.badge-warn{background:#FFF3E0;color:#E65100;}
+.badge-del{background:rgba(255,59,59,0.1);color:var(--error);}
+.badge-gray{background:var(--fondo-2);color:var(--texto-3);}
+.badge-info{background:var(--celeste-suave);color:var(--celeste);}
+
+/* BOTONES ACCIÓN */
+.btn-accion{padding:4px 12px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;}
+.btn-ok{background:var(--verde-suave);color:var(--verde);}
+.btn-ok:hover{background:var(--verde);color:var(--blanco);}
+.btn-warn{background:#FFF3E0;color:#E65100;}
+.btn-warn:hover{background:#E65100;color:var(--blanco);}
+.btn-del{background:rgba(255,59,59,0.1);color:var(--error);}
+.btn-del:hover{background:var(--error);color:var(--blanco);}
+.btn-info{background:var(--celeste-suave);color:var(--celeste);}
+.btn-info:hover{background:var(--celeste);color:var(--blanco);}
+
+/* BÚSQUEDA */
+.busqueda-wrap{position:relative;}
+.busqueda-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--texto-3);}
+.busqueda-wrap input{height:34px;padding:0 12px 0 30px;border:1.5px solid var(--borde);border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:var(--texto);background:var(--fondo);outline:none;width:200px;}
+.busqueda-wrap input:focus{border-color:var(--celeste);background:var(--blanco);}
+
+/* CATEGORÍAS FORM */
+.cat-form{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);padding:24px;margin-bottom:20px;}
+.cat-form h3{font-family:'Playfair Display',serif;font-size:18px;margin-bottom:16px;}
+.cat-form-grid{display:grid;grid-template-columns:1fr 160px auto;gap:12px;align-items:end;}
+.grupo{display:flex;flex-direction:column;gap:5px;}
+label{font-size:13px;font-weight:600;color:var(--texto-2);}
+input[type="text"],select{width:100%;height:42px;padding:0 12px;background:var(--fondo);border:1.5px solid transparent;border-radius:var(--r-sm);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:var(--texto);outline:none;transition:all 0.2s;-webkit-appearance:none;}
+input:focus,select:focus{border-color:var(--celeste);background:var(--blanco);}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:0 20px;height:42px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;}
+.btn-celeste{background:var(--celeste);color:var(--blanco);box-shadow:0 4px 14px rgba(91,173,214,0.3);}
+.btn-celeste:hover{background:#4A9DC6;}
+
+/* SEC TITULO */
+.sec-titulo-wrap{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.sec-titulo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);padding:11px 22px;border-radius:100px;font-size:14px;font-weight:600;opacity:0;transition:all 0.3s;z-index:500;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{background:var(--texto);color:var(--blanco);}
+.toast.error{background:var(--error);color:var(--blanco);}
+
+@media(max-width:900px){
+  .sidebar{position:fixed;top:0;left:0;bottom:0;z-index:100;transform:translateX(-100%);}
+  .sidebar.abierto{transform:translateX(0);}
+  .btn-hamburger{display:flex;}
+  .content-area{padding:20px 16px;}
+  .cat-form-grid{grid-template-columns:1fr;}
+  .busqueda-wrap input{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div id="cargando">
+  <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco" style="height:52px;margin-bottom:8px;">
+  <div class="spinner-grande"></div>
+  <p>Verificando acceso...</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="appContent">
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco">
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar">A</div>
+      <div>
+        <div class="user-nombre" id="adminNombre">Admin</div>
+        <div class="user-rol">Administrador</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-grupo-titulo">Panel</div>
+      <div class="nav-item activo" data-sec="inicio" onclick="mostrarSeccion('inicio')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Métricas
+      </div>
+      <div class="nav-item" data-sec="negocios" onclick="mostrarSeccion('negocios')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Negocios
+      </div>
+      <div class="nav-item" data-sec="publicaciones" onclick="mostrarSeccion('publicaciones')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Publicaciones
+      </div>
+      <div class="nav-item" data-sec="usuarios" onclick="mostrarSeccion('usuarios')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Usuarios
+      </div>
+      <div class="nav-item" data-sec="reportes" onclick="mostrarSeccion('reportes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        Reportes
+      </div>
+      <div class="nav-item" data-sec="categorias" onclick="mostrarSeccion('categorias')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+        Categorías
+      </div>
+      <div class="nav-grupo-titulo" style="margin-top:12px;">Sistema</div>
+      <div class="nav-item" onclick="window.location.href='index.html'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Ver marketplace
+      </div>
+      <div class="nav-item" onclick="cerrarSesion()" style="color:rgba(255,100,100,0.7);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Cerrar sesión
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="btn-hamburger" onclick="toggleSidebar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="topbar-titulo">Panel Administrador</div>
+        <div class="admin-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Admin
+        </div>
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      <!-- MÉTRICAS -->
+      <div class="seccion" id="sec-inicio" style="display:block;">
+        <div class="sec-titulo-wrap"><div class="sec-titulo">Resumen general</div></div>
+        <div class="metricas-grid">
+          <div class="met-card">
+            <div class="met-icono cel"><svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+            <div><div class="met-num" id="mUsuarios">-</div><div class="met-lbl">Usuarios</div></div>
+          </div>
+          <div class="met-card">
+            <div class="met-icono ver"><svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+            <div><div class="met-num" id="mNegocios">-</div><div class="met-lbl">Negocios</div></div>
+          </div>
+          <div class="met-card">
+            <div class="met-icono cel"><svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
+            <div><div class="met-num" id="mPublicaciones">-</div><div class="met-lbl">Publicaciones</div></div>
+          </div>
+          <div class="met-card">
+            <div class="met-icono info"><svg viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <div><div class="met-num" id="mPendientes">-</div><div class="met-lbl">Pendientes</div></div>
+          </div>
+        </div>
+        <div style="background:var(--celeste-suave);border:1.5px solid var(--celeste-claro);border-radius:var(--r-md);padding:16px 20px;display:flex;gap:12px;align-items:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p style="font-size:13px;color:var(--texto-2);">Revisá los negocios y publicaciones pendientes de aprobación antes de que aparezcan en el marketplace.</p>
+        </div>
+      </div>
+
+      <!-- NEGOCIOS -->
+      <div class="seccion" id="sec-negocios">
+        <div class="sec-titulo-wrap"><div class="sec-titulo">Gestión de negocios</div></div>
+        <div class="tabla-wrap">
+          <div class="tabla-header">
+            <div class="tabla-titulo">Todos los negocios</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <div class="busqueda-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" placeholder="Buscar..." oninput="buscarNegocios(this.value)">
+              </div>
+              <div class="filtros">
+                <button class="filtro-btn activo" onclick="filtrarNegocios('todos')">Todos</button>
+                <button class="filtro-btn" onclick="filtrarNegocios('pendiente')">Pendientes</button>
+                <button class="filtro-btn" onclick="filtrarNegocios('aprobado')">Aprobados</button>
+                <button class="filtro-btn" onclick="filtrarNegocios('destacado')">Destacados</button>
+              </div>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr>
+                <th>Negocio</th><th>Localidad</th><th>Estado</th>
+                <th>Destacado</th><th>WhatsApp</th><th>Acciones</th>
+              </tr></thead>
+              <tbody id="tbodyNegocios"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PUBLICACIONES -->
+      <div class="seccion" id="sec-publicaciones">
+        <div class="sec-titulo-wrap"><div class="sec-titulo">Gestión de publicaciones</div></div>
+        <div class="tabla-wrap">
+          <div class="tabla-header">
+            <div class="tabla-titulo">Todas las publicaciones</div>
+            <div class="filtros">
+              <button class="filtro-btn-pub activo" onclick="filtrarPubs('todos')">Todas</button>
+              <button class="filtro-btn-pub" onclick="filtrarPubs('pendiente')">Pendientes</button>
+              <button class="filtro-btn-pub" onclick="filtrarPubs('aprobada')">Aprobadas</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>Publicación</th><th>Categoría</th><th>Negocio</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="tbodyPublicaciones"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- USUARIOS -->
+      <div class="seccion" id="sec-usuarios">
+        <div class="sec-titulo-wrap"><div class="sec-titulo">Gestión de usuarios</div></div>
+        <div class="tabla-wrap">
+          <div class="tabla-header"><div class="tabla-titulo">Todos los usuarios</div></div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>Usuario</th><th>Rol</th><th>Edad</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="tbodyUsuarios"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTES -->
+      <div class="seccion" id="sec-reportes">
+        <div class="sec-titulo-wrap"><div class="sec-titulo">Reportes</div></div>
+        <div class="tabla-wrap">
+          <div class="tabla-header"><div class="tabla-titulo">Reportes de usuarios</div></div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>Tipo</th><th>Razón</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="tbodyReportes"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CATEGORÍAS -->
+      <div class="seccion" id="sec-categorias">
+        <div class="sec-titulo-wrap"><div class="sec-titulo">Gestión de categorías</div></div>
+        <div class="cat-form">
+          <h3>Nueva categoría</h3>
+          <form id="formCategoria" onsubmit="guardarCategoria(event)">
+            <div class="cat-form-grid">
+              <div class="grupo">
+                <label>Nombre de la categoría</label>
+                <input type="text" id="catNombre" placeholder="Ej: Floristería" required>
+              </div>
+              <div class="grupo">
+                <label>Tipo</label>
+                <select id="catTipo" required>
+                  <option value="">Tipo</option>
+                  <option value="producto">Producto</option>
+                  <option value="servicio">Servicio</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-celeste">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar
+              </button>
+            </div>
+          </form>
+        </div>
+        <div class="tabla-wrap">
+          <div class="tabla-header"><div class="tabla-titulo">Categorías personalizadas</div></div>
+          <div id="listaCategorias"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+</body>
+</html>

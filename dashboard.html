@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Panel — PuntoChaco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+
+<script type="module">
+  import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, query, where,
+           getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCibGsSHDHn6c8VXLzUlqeKXpaxibfpVuc",
+    authDomain: "chacoemprende-df731.firebaseapp.com",
+    projectId: "chacoemprende-df731",
+    storageBucket: "chacoemprende-df731.firebasestorage.app",
+    messagingSenderId: "871612466602",
+    appId: "1:871612466602:web:fe62a4f01c38d5b2c417d3"
+  };
+
+  const CLOUDINARY_CLOUD  = "dhrhg6ng6";
+  const CLOUDINARY_PRESET = "punto_chaco_uploads";
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let usuarioActual = null;
+  let negocioActual = null;
+  let publicaciones  = [];
+
+  const PROHIBIDAS = ["cigarrillo","cigarro","tabaco","alcohol","cerveza","vino",
+    "fernet","whisky","vodka","droga","cocaina","marihuana","cannabis","paco"];
+
+  function contieneProhibidas(txt) {
+    const t = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    return PROHIBIDAS.some(p => t.includes(p));
+  }
+
+  // ── Auth guard ──
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = "login.html"; return; }
+
+    const snap = await getDoc(doc(db, "usuarios", user.uid));
+    if (!snap.exists()) { window.location.href = "login.html"; return; }
+
+    const datos = snap.data();
+    if (datos.rol !== "vendedor") { window.location.href = "index.html"; return; }
+    if (datos.baneado) { await signOut(auth); window.location.href = "login.html"; return; }
+
+    usuarioActual = { uid: user.uid, ...datos };
+
+    // Cargar negocio
+    const negSnap = await getDoc(doc(db, "negocios", user.uid));
+    if (negSnap.exists()) negocioActual = { id: negSnap.id, ...negSnap.data() };
+
+    renderPerfil();
+    await cargarPublicaciones();
+    document.getElementById("cargando").style.display = "none";
+    document.getElementById("appContent").style.display = "flex";
+  });
+
+  function renderPerfil() {
+    document.getElementById("nombreUsuario").textContent =
+      `${usuarioActual.nombre} ${usuarioActual.apellido}`;
+    document.getElementById("nombreNegocio").textContent =
+      negocioActual?.nombre || "Mi negocio";
+
+    const estadoEl = document.getElementById("estadoNegocio");
+    if (negocioActual?.aprobado) {
+      estadoEl.textContent = "Aprobado";
+      estadoEl.className = "estado-badge aprobado";
+    } else {
+      estadoEl.textContent = "Pendiente de aprobación";
+      estadoEl.className = "estado-badge pendiente";
+    }
+
+    if (negocioActual?.logoUrl) {
+      document.getElementById("logoNegocio").src = negocioActual.logoUrl;
+      document.getElementById("logoNegocio").style.display = "block";
+      document.getElementById("logoPlaceholder").style.display = "none";
+    }
+
+    // Stats
+    document.getElementById("statLocalidad").textContent = negocioActual?.localidad || "-";
+    document.getElementById("statCategoria").textContent = negocioActual?.categoria || "-";
+    document.getElementById("statWhatsapp").textContent  = negocioActual?.whatsapp  || "-";
+  }
+
+  async function cargarPublicaciones() {
+    const q = query(collection(db, "publicaciones"),
+                    where("propietarioId", "==", usuarioActual.uid));
+    const snap = await getDocs(q);
+    publicaciones = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderPublicaciones();
+    document.getElementById("contadorPubs").textContent = publicaciones.length;
+    document.getElementById("limitePubs").textContent   = `${publicaciones.length}/10`;
+    const pct = (publicaciones.length / 10) * 100;
+    document.getElementById("barraLimite").style.width = pct + "%";
+    document.getElementById("barraLimite").style.background =
+      pct >= 100 ? "var(--error)" : pct >= 70 ? "#FF9500" : "var(--verde)";
+  }
+
+  function renderPublicaciones() {
+    const grid = document.getElementById("gridPublicaciones");
+    const empty = document.getElementById("sinPublicaciones");
+
+    if (publicaciones.length === 0) {
+      grid.style.display = "none";
+      empty.style.display = "flex";
+      return;
+    }
+    grid.style.display = "grid";
+    empty.style.display = "none";
+
+    grid.innerHTML = publicaciones.map(p => `
+      <div class="pub-card ${!p.aprobado ? 'pendiente-card' : ''}">
+        <div class="pub-img" style="${p.imageUrl ? `background-image:url('${p.imageUrl}')` : 'background:var(--fondo-2)'}">
+          ${!p.imageUrl ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="color:var(--texto-3)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>` : ''}
+          <div class="pub-estado-badge ${p.aprobado ? 'ap' : 'pe'}">
+            ${p.aprobado ? 'Aprobada' : 'Pendiente'}
+          </div>
+        </div>
+        <div class="pub-body">
+          <div class="pub-cat">${p.categoria || ''}</div>
+          <div class="pub-titulo">${p.titulo}</div>
+          <div class="pub-precio">$${Number(p.precio).toLocaleString('es-AR')}</div>
+          <div class="pub-acciones">
+            <button onclick="abrirEditarPub('${p.id}')" class="btn-pub-edit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Editar
+            </button>
+            <button onclick="eliminarPub('${p.id}')" class="btn-pub-del">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── Modal nueva publicación ──
+  window.abrirModalPub = function(id = null) {
+    if (publicaciones.length >= 10 && !id) {
+      mostrarToast("Alcanzaste el límite de 10 publicaciones gratuitas.", "error");
+      return;
+    }
+    document.getElementById("modalPub").style.display = "flex";
+    document.getElementById("modalPubTitulo").textContent = id ? "Editar publicación" : "Nueva publicación";
+    document.getElementById("pubId").value = id || "";
+
+    if (id) {
+      const p = publicaciones.find(x => x.id === id);
+      if (p) {
+        document.getElementById("pubTitulo").value      = p.titulo || "";
+        document.getElementById("pubDescripcion").value = p.descripcion || "";
+        document.getElementById("pubPrecio").value      = p.precio || "";
+        document.getElementById("pubCategoria").value   = p.categoria || "";
+        if (p.imageUrl) {
+          document.getElementById("pubImgPreview").src = p.imageUrl;
+          document.getElementById("pubImgPreview").style.display = "block";
+        }
+      }
+    } else {
+      document.getElementById("formPub").reset();
+      document.getElementById("pubImgPreview").style.display = "none";
+    }
+  };
+
+  window.abrirEditarPub = function(id) { abrirModalPub(id); };
+
+  window.cerrarModalPub = function() {
+    document.getElementById("modalPub").style.display = "none";
+  };
+
+  window.previewImgPub = function(input) {
+    const f = input.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = e => {
+      const img = document.getElementById("pubImgPreview");
+      img.src = e.target.result;
+      img.style.display = "block";
+    };
+    r.readAsDataURL(f);
+  };
+
+  window.guardarPublicacion = async function(e) {
+    e.preventDefault();
+    const id          = document.getElementById("pubId").value;
+    const titulo      = document.getElementById("pubTitulo").value.trim();
+    const descripcion = document.getElementById("pubDescripcion").value.trim();
+    const precio      = document.getElementById("pubPrecio").value;
+    const categoria   = document.getElementById("pubCategoria").value;
+    const imgFile     = document.getElementById("pubImagen").files[0];
+
+    if (!titulo)    return mostrarToast("Ingresá un título", "error");
+    if (!precio)    return mostrarToast("Ingresá un precio", "error");
+    if (!categoria) return mostrarToast("Seleccioná una categoría", "error");
+
+    if (contieneProhibidas(titulo) || contieneProhibidas(descripcion)) {
+      return mostrarToast("El contenido tiene palabras no permitidas", "error");
+    }
+
+    setBtnGuardar(true);
+
+    let imageUrl = id ? publicaciones.find(x=>x.id===id)?.imageUrl || "" : "";
+
+    if (imgFile) {
+      try {
+        const fd = new FormData();
+        fd.append("file", imgFile);
+        fd.append("upload_preset", CLOUDINARY_PRESET);
+        fd.append("folder", "punto-chaco/publicaciones");
+        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:"POST", body:fd });
+        const data = await res.json();
+        imageUrl   = data.secure_url;
+      } catch {
+        setBtnGuardar(false);
+        return mostrarToast("Error al subir la imagen", "error");
+      }
+    }
+
+    const datos = {
+      titulo, descripcion, precio: Number(precio), categoria,
+      imageUrl, negocioId: negocioActual?.id || usuarioActual.uid,
+      propietarioId: usuarioActual.uid,
+      localidad: negocioActual?.localidad || "",
+      nombreNegocio: negocioActual?.nombre || "",
+      aprobado: false, activo: true,
+    };
+
+    try {
+      if (id) {
+        await updateDoc(doc(db, "publicaciones", id), datos);
+        mostrarToast("Publicación actualizada", "ok");
+      } else {
+        datos.creadoEn = serverTimestamp();
+        await addDoc(collection(db, "publicaciones"), datos);
+        mostrarToast("Publicación enviada para revisión", "ok");
+      }
+      cerrarModalPub();
+      await cargarPublicaciones();
+    } catch {
+      mostrarToast("Error al guardar. Intentá de nuevo.", "error");
+    }
+    setBtnGuardar(false);
+  };
+
+  window.eliminarPub = async function(id) {
+    if (!confirm("¿Seguro que querés eliminar esta publicación?")) return;
+    await deleteDoc(doc(db, "publicaciones", id));
+    mostrarToast("Publicación eliminada", "ok");
+    await cargarPublicaciones();
+  };
+
+  window.cerrarSesion = async function() {
+    await signOut(auth);
+    window.location.href = "index.html";
+  };
+
+  function setBtnGuardar(cargando) {
+    const btn = document.getElementById("btnGuardarPub");
+    btn.disabled = cargando;
+    btn.textContent = cargando ? "Guardando..." : "Guardar publicación";
+  }
+
+  function mostrarToast(msg, tipo = "ok") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast show " + tipo;
+    setTimeout(() => t.className = "toast", 3000);
+  }
+
+  // Cambiar sección
+  window.mostrarSeccion = function(id) {
+    document.querySelectorAll(".seccion").forEach(s => s.style.display = "none");
+    document.getElementById("sec-" + id).style.display = "block";
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("activo"));
+    document.querySelector(`[data-sec="${id}"]`)?.classList.add("activo");
+    if (window.innerWidth < 900) document.getElementById("sidebar").classList.remove("abierto");
+  };
+
+  window.toggleSidebar = function() {
+    document.getElementById("sidebar").classList.toggle("abierto");
+  };
+</script>
+
+<style>
+:root {
+  --blanco: #FFFFFF;
+  --fondo: #F4F9FC;
+  --fondo-2: #EBF5FB;
+  --celeste: #5BADD6;
+  --celeste-claro: #C8E6F5;
+  --celeste-suave: #EBF5FC;
+  --verde: #3A8F5A;
+  --verde-suave: #EAF5EF;
+  --texto: #1A2B4A;
+  --texto-2: #3A5A72;
+  --texto-3: #7A9BB0;
+  --borde: #D8EBF5;
+  --error: #FF3B3B;
+  --r-sm: 10px; --r-md: 16px; --r-lg: 24px;
+  --sombra: 0 4px 20px rgba(42,172,226,0.08);
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--fondo); color:var(--texto); -webkit-font-smoothing:antialiased; }
+
+/* ── CARGANDO ── */
+#cargando {
+  position:fixed; inset:0; background:var(--blanco);
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:16px; z-index:999;
+}
+.spinner-grande {
+  width:48px; height:48px;
+  border:4px solid var(--celeste-claro);
+  border-top-color:var(--celeste);
+  border-radius:50%;
+  animation:girar 0.8s linear infinite;
+}
+@keyframes girar { to { transform:rotate(360deg); } }
+#cargando p { font-size:14px; color:var(--texto-3); }
+
+/* ── LAYOUT ── */
+#appContent { display:none; min-height:100vh; }
+
+.layout {
+  display:flex; min-height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width:240px; flex-shrink:0;
+  background:var(--texto);
+  display:flex; flex-direction:column;
+  position:sticky; top:0; height:100vh;
+  overflow-y:auto;
+  transition:transform 0.3s;
+}
+
+.sidebar-logo {
+  padding:20px 20px 16px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.sidebar-logo img { height:36px; width:auto; }
+
+.sidebar-user {
+  padding:16px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  display:flex; align-items:center; gap:10px;
+}
+.user-avatar {
+  width:36px; height:36px; border-radius:50%;
+  background:var(--celeste);
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:700; color:var(--blanco);
+  flex-shrink:0;
+}
+.user-info { flex:1; min-width:0; }
+.user-nombre { font-size:13px; font-weight:700; color:var(--blanco); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.user-rol    { font-size:11px; color:rgba(255,255,255,0.4); }
+
+.sidebar-nav { flex:1; padding:12px 0; }
+
+.nav-grupo-titulo {
+  font-size:10px; font-weight:700; letter-spacing:0.1em;
+  text-transform:uppercase; color:rgba(255,255,255,0.25);
+  padding:8px 20px 4px;
+}
+
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 20px;
+  font-size:13px; font-weight:500;
+  color:rgba(255,255,255,0.55);
+  cursor:pointer; transition:all 0.2s;
+  border-left:3px solid transparent;
+}
+.nav-item:hover { color:var(--blanco); background:rgba(255,255,255,0.04); }
+.nav-item.activo {
+  color:var(--blanco);
+  background:rgba(91,173,214,0.15);
+  border-left-color:var(--celeste);
+}
+.nav-item svg { width:16px; height:16px; flex-shrink:0; }
+
+.sidebar-bottom {
+  padding:12px 0;
+  border-top:1px solid rgba(255,255,255,0.08);
+}
+
+/* MAIN */
+.main-content {
+  flex:1; min-width:0;
+  display:flex; flex-direction:column;
+}
+
+/* TOPBAR */
+.topbar {
+  height:64px; background:var(--blanco);
+  border-bottom:1.5px solid var(--borde);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 28px; gap:16px;
+  position:sticky; top:0; z-index:50;
+}
+.topbar-titulo {
+  font-family:'Playfair Display',serif;
+  font-size:20px; font-weight:700;
+}
+.topbar-acciones { display:flex; align-items:center; gap:10px; }
+.btn-hamburger {
+  display:none; background:none; border:none; cursor:pointer;
+  padding:4px;
+}
+.btn-hamburger svg { width:22px; height:22px; stroke:var(--texto); }
+
+/* CONTENIDO */
+.content-area { flex:1; padding:28px; }
+
+.seccion { display:none; }
+.seccion:first-of-type { display:block; }
+
+/* ── CARDS RESUMEN ── */
+.resumen-grid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:16px; margin-bottom:28px;
+}
+.res-card {
+  background:var(--blanco);
+  border:1.5px solid var(--borde);
+  border-radius:var(--r-lg);
+  padding:20px 22px;
+  display:flex; align-items:center; gap:14px;
+}
+.res-icono {
+  width:46px; height:46px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.res-icono.cel { background:var(--celeste-suave); }
+.res-icono.ver { background:var(--verde-suave); }
+.res-icono svg { width:22px; height:22px; }
+.res-num {
+  font-family:'Playfair Display',serif;
+  font-size:24px; font-weight:700; color:var(--texto);
+}
+.res-lbl { font-size:12px; color:var(--texto-3); font-weight:500; }
+
+/* PERFIL NEGOCIO */
+.perfil-card {
+  background:var(--blanco);
+  border:1.5px solid var(--borde);
+  border-radius:var(--r-lg);
+  overflow:hidden;
+  margin-bottom:20px;
+}
+.perfil-cover {
+  height:100px;
+  background:linear-gradient(135deg, var(--celeste) 0%, #3A8F5A 100%);
+  position:relative;
+}
+.perfil-avatar {
+  width:72px; height:72px;
+  border-radius:var(--r-md);
+  border:3px solid var(--blanco);
+  background:var(--fondo);
+  position:absolute; bottom:-36px; left:24px;
+  overflow:hidden; box-shadow:var(--sombra);
+  display:flex; align-items:center; justify-content:center;
+}
+.perfil-avatar img { width:100%; height:100%; object-fit:cover; display:none; }
+.perfil-avatar svg { width:28px; height:28px; stroke:var(--texto-3); }
+
+.perfil-body { padding:48px 24px 24px; }
+.perfil-nombre {
+  font-family:'Playfair Display',serif;
+  font-size:20px; font-weight:700; margin-bottom:4px;
+}
+.perfil-info-grid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px; margin-top:16px;
+}
+.perfil-dato {
+  display:flex; flex-direction:column; gap:2px;
+}
+.perfil-dato-lbl { font-size:11px; color:var(--texto-3); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; }
+.perfil-dato-val { font-size:14px; color:var(--texto); font-weight:500; }
+
+/* ESTADO BADGE */
+.estado-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:100px;
+  font-size:12px; font-weight:600;
+}
+.estado-badge.aprobado { background:var(--verde-suave); color:var(--verde); }
+.estado-badge.pendiente { background:#FFF3E0; color:#E65100; }
+
+/* LÍMITE BARRA */
+.limite-wrap {
+  background:var(--blanco); border:1.5px solid var(--borde);
+  border-radius:var(--r-md); padding:16px 20px;
+  margin-bottom:20px;
+}
+.limite-header { display:flex; justify-content:space-between; margin-bottom:8px; }
+.limite-lbl { font-size:13px; font-weight:600; color:var(--texto-2); }
+.limite-num { font-size:13px; font-weight:700; color:var(--texto); }
+.barra-track {
+  height:6px; background:var(--fondo-2);
+  border-radius:3px; overflow:hidden;
+}
+.barra-fill {
+  height:100%; background:var(--verde);
+  border-radius:3px; transition:width 0.5s ease;
+}
+
+/* PUBLICACIONES GRID */
+.pub-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:16px;
+}
+.pub-card {
+  background:var(--blanco); border:1.5px solid var(--borde);
+  border-radius:var(--r-lg); overflow:hidden; transition:all 0.25s;
+}
+.pub-card:hover { box-shadow:var(--sombra); transform:translateY(-3px); }
+.pub-card.pendiente-card { border-color:#FFE0B2; }
+
+.pub-img {
+  height:140px; background:var(--fondo-2);
+  display:flex; align-items:center; justify-content:center;
+  position:relative; background-size:cover; background-position:center;
+}
+.pub-estado-badge {
+  position:absolute; top:8px; left:8px;
+  padding:3px 10px; border-radius:100px;
+  font-size:11px; font-weight:700;
+}
+.pub-estado-badge.ap { background:rgba(58,143,90,0.15); color:var(--verde); }
+.pub-estado-badge.pe { background:rgba(255,152,0,0.15); color:#E65100; }
+
+.pub-body { padding:14px; }
+.pub-cat  { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--celeste); margin-bottom:3px; }
+.pub-titulo { font-size:15px; font-weight:700; margin-bottom:4px; }
+.pub-precio { font-size:16px; font-weight:800; color:var(--verde); margin-bottom:12px; }
+.pub-acciones { display:flex; gap:6px; }
+
+.btn-pub-edit {
+  flex:1; height:32px;
+  background:var(--celeste-suave); color:var(--celeste);
+  border:1px solid var(--celeste-claro); border-radius:100px;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:12px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:4px;
+  transition:all 0.2s;
+}
+.btn-pub-edit:hover { background:var(--celeste); color:var(--blanco); }
+
+.btn-pub-del {
+  flex:1; height:32px;
+  background:rgba(255,59,59,0.06); color:var(--error);
+  border:1px solid rgba(255,59,59,0.15); border-radius:100px;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:12px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:4px;
+  transition:all 0.2s;
+}
+.btn-pub-del:hover { background:var(--error); color:var(--blanco); }
+
+/* SIN PUBLICACIONES */
+.sin-pubs {
+  display:none; flex-direction:column; align-items:center;
+  justify-content:center; padding:60px 20px; text-align:center;
+  background:var(--blanco); border:1.5px dashed var(--borde);
+  border-radius:var(--r-lg);
+}
+.sin-pubs svg { width:48px; height:48px; stroke:var(--texto-3); margin-bottom:16px; }
+.sin-pubs h3 { font-size:17px; font-weight:700; margin-bottom:6px; }
+.sin-pubs p  { font-size:14px; color:var(--texto-2); }
+
+/* BOTONES */
+.btn {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:0 20px; height:40px; border-radius:100px;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:14px; font-weight:600; cursor:pointer;
+  text-decoration:none; border:none; transition:all 0.2s;
+}
+.btn-celeste { background:var(--celeste); color:var(--blanco); box-shadow:0 4px 14px rgba(91,173,214,0.3); }
+.btn-celeste:hover { background:#4A9DC6; transform:translateY(-1px); }
+.btn-ghost   { background:transparent; color:var(--texto-2); border:1.5px solid var(--borde); }
+.btn-ghost:hover { border-color:var(--celeste); color:var(--celeste); }
+.btn-error   { background:rgba(255,59,59,0.08); color:var(--error); border:1.5px solid rgba(255,59,59,0.2); }
+.btn-error:hover { background:var(--error); color:var(--blanco); }
+
+/* MODAL */
+.modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(26,43,74,0.5); backdrop-filter:blur(6px);
+  z-index:200; align-items:center; justify-content:center; padding:20px;
+}
+.modal-box {
+  background:var(--blanco); border-radius:var(--r-lg);
+  width:100%; max-width:520px;
+  max-height:90vh; overflow-y:auto;
+  box-shadow:0 24px 64px rgba(0,0,0,0.15);
+  animation:aparecer 0.3s ease;
+}
+@keyframes aparecer { from{transform:scale(0.96);opacity:0} to{transform:scale(1);opacity:1} }
+
+.modal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 24px; border-bottom:1.5px solid var(--borde);
+}
+.modal-header h3 { font-family:'Playfair Display',serif; font-size:20px; }
+.btn-cerrar-modal {
+  background:none; border:none; cursor:pointer;
+  width:32px; height:32px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--texto-3); transition:all 0.2s;
+}
+.btn-cerrar-modal:hover { background:var(--fondo); color:var(--texto); }
+.btn-cerrar-modal svg { width:18px; height:18px; }
+
+.modal-body { padding:24px; }
+
+.grupo { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+label  { font-size:13px; font-weight:600; color:var(--texto-2); }
+input[type="text"], input[type="number"], select, textarea {
+  width:100%; height:44px;
+  padding:0 14px;
+  background:var(--fondo); border:1.5px solid transparent;
+  border-radius:var(--r-sm);
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:14px; color:var(--texto);
+  outline:none; transition:all 0.2s; -webkit-appearance:none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color:var(--celeste); background:var(--blanco);
+  box-shadow:0 0 0 3px rgba(91,173,214,0.1);
+}
+textarea { height:80px; padding:10px 14px; resize:vertical; }
+
+.upload-area {
+  border:2px dashed var(--borde); border-radius:var(--r-md);
+  padding:20px; text-align:center; cursor:pointer;
+  transition:all 0.2s; background:var(--fondo);
+}
+.upload-area:hover { border-color:var(--celeste); background:var(--celeste-suave); }
+.upload-area input { display:none; }
+#pubImgPreview { display:none; width:100%; height:120px; object-fit:cover; border-radius:var(--r-sm); margin-bottom:8px; }
+.upload-area p { font-size:13px; color:var(--texto-3); }
+
+.modal-footer {
+  padding:16px 24px; border-top:1.5px solid var(--borde);
+  display:flex; gap:10px; justify-content:flex-end;
+}
+
+/* TOAST */
+.toast {
+  position:fixed; bottom:24px; left:50%;
+  transform:translateX(-50%) translateY(16px);
+  padding:11px 22px; border-radius:100px;
+  font-size:14px; font-weight:600;
+  opacity:0; transition:all 0.3s; z-index:500;
+  white-space:nowrap; pointer-events:none;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast.ok    { background:var(--texto); color:var(--blanco); }
+.toast.error { background:var(--error); color:var(--blanco); }
+
+/* SECCION TÍTULO */
+.sec-titulo-wrap {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:20px; flex-wrap:wrap; gap:12px;
+}
+.sec-titulo {
+  font-family:'Playfair Display',serif;
+  font-size:22px; font-weight:700;
+}
+
+/* RESPONSIVE */
+@media (max-width:900px) {
+  .sidebar {
+    position:fixed; top:0; left:0; bottom:0; z-index:100;
+    transform:translateX(-100%);
+  }
+  .sidebar.abierto { transform:translateX(0); }
+  .btn-hamburger { display:flex; }
+  .content-area { padding:20px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- CARGANDO -->
+<div id="cargando">
+  <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png"
+       alt="PuntoChaco" style="height:52px; margin-bottom:8px;">
+  <div class="spinner-grande"></div>
+  <p>Cargando tu panel...</p>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL PUBLICACIÓN -->
+<div class="modal-overlay" id="modalPub">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modalPubTitulo">Nueva publicación</h3>
+      <button class="btn-cerrar-modal" onclick="cerrarModalPub()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="formPub" onsubmit="guardarPublicacion(event)">
+      <input type="hidden" id="pubId">
+      <div class="modal-body">
+
+        <div class="grupo">
+          <label>Imagen del producto</label>
+          <label class="upload-area" for="pubImagen">
+            <input type="file" id="pubImagen" accept="image/*" onchange="previewImgPub(this)">
+            <img id="pubImgPreview" alt="preview">
+            <p>Hacé click para subir una imagen</p>
+          </label>
+        </div>
+
+        <div class="grupo">
+          <label for="pubTitulo">Título *</label>
+          <input type="text" id="pubTitulo" placeholder="Ej: Tarta de frutos rojos" required>
+        </div>
+
+        <div class="grupo">
+          <label for="pubDescripcion">Descripción</label>
+          <textarea id="pubDescripcion" placeholder="Describí tu producto..."></textarea>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="grupo">
+            <label for="pubPrecio">Precio ($) *</label>
+            <input type="number" id="pubPrecio" placeholder="0" min="0" required>
+          </div>
+          <div class="grupo">
+            <label for="pubCategoria">Categoría *</label>
+            <select id="pubCategoria" required>
+              <option value="">Seleccioná</option>
+              <optgroup label="Productos">
+                <option>Postres</option><option>Comida rápida</option>
+                <option>Viandas</option><option>Electrónica</option>
+                <option>Petshop</option><option>Carnicería</option>
+                <option>Kiosco</option><option>Avícola</option>
+                <option>Perfumería</option><option>Manualidades</option>
+                <option>Diseño gráfico e impresiones</option>
+                <option>Música</option><option>Otros</option>
+              </optgroup>
+              <optgroup label="Servicios">
+                <option>Barbería</option><option>Manicuría</option>
+                <option>Cosmetología</option><option>Educación</option>
+                <option>Deportes</option><option>Reparaciones</option>
+                <option>Fotografía</option><option>Marketing</option>
+                <option>Tecnología</option><option>Otros servicios</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+
+        <div style="background:var(--fondo); border-radius:var(--r-sm); padding:12px; font-size:13px; color:var(--texto-3); display:flex; gap:8px; align-items:flex-start;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Las publicaciones son revisadas antes de aparecer en el marketplace.
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="cerrarModalPub()">Cancelar</button>
+        <button type="submit" class="btn btn-celeste" id="btnGuardarPub">Guardar publicación</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appContent">
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco">
+      </div>
+
+      <div class="sidebar-user">
+        <div class="user-avatar" id="userAvatar">V</div>
+        <div class="user-info">
+          <div class="user-nombre" id="nombreUsuario">Cargando...</div>
+          <div class="user-rol">Vendedor</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-grupo-titulo">Principal</div>
+        <div class="nav-item activo" data-sec="inicio" onclick="mostrarSeccion('inicio')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Resumen
+        </div>
+        <div class="nav-item" data-sec="publicaciones" onclick="mostrarSeccion('publicaciones')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Mis publicaciones
+        </div>
+        <div class="nav-item" data-sec="negocio" onclick="mostrarSeccion('negocio')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Mi negocio
+        </div>
+
+        <div class="nav-grupo-titulo" style="margin-top:12px;">Cuenta</div>
+        <div class="nav-item" onclick="window.location.href='index.html'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          Ver marketplace
+        </div>
+        <div class="nav-item" onclick="cerrarSesion()" style="color:rgba(255,100,100,0.7);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Cerrar sesión
+        </div>
+      </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-content">
+      <div class="topbar">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button class="btn-hamburger" onclick="toggleSidebar()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="topbar-titulo" id="nombreNegocio">Mi negocio</div>
+          <div class="estado-badge pendiente" id="estadoNegocio">Pendiente</div>
+        </div>
+        <div class="topbar-acciones">
+          <button class="btn btn-celeste" onclick="abrirModalPub()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nueva publicación
+          </button>
+        </div>
+      </div>
+
+      <div class="content-area">
+
+        <!-- SECCIÓN INICIO -->
+        <div class="seccion" id="sec-inicio">
+          <div class="resumen-grid">
+            <div class="res-card">
+              <div class="res-icono cel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div>
+                <div class="res-num" id="contadorPubs">0</div>
+                <div class="res-lbl">Publicaciones</div>
+              </div>
+            </div>
+            <div class="res-card">
+              <div class="res-icono ver">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <div>
+                <div class="res-num" id="statLocalidad" style="font-size:16px;">-</div>
+                <div class="res-lbl">Localidad</div>
+              </div>
+            </div>
+            <div class="res-card">
+              <div class="res-icono cel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+              </div>
+              <div>
+                <div class="res-num" id="statCategoria" style="font-size:14px;">-</div>
+                <div class="res-lbl">Categoría</div>
+              </div>
+            </div>
+            <div class="res-card">
+              <div class="res-icono ver">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </div>
+              <div>
+                <div class="res-num" id="statWhatsapp" style="font-size:13px;">-</div>
+                <div class="res-lbl">WhatsApp</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Límite publicaciones -->
+          <div class="limite-wrap">
+            <div class="limite-header">
+              <span class="limite-lbl">Publicaciones usadas</span>
+              <span class="limite-num" id="limitePubs">0/10</span>
+            </div>
+            <div class="barra-track">
+              <div class="barra-fill" id="barraLimite" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- Últimas publicaciones preview -->
+          <div class="sec-titulo-wrap">
+            <div class="sec-titulo">Tus publicaciones</div>
+            <button class="btn btn-ghost btn-sm" onclick="mostrarSeccion('publicaciones')"
+              style="height:34px; padding:0 16px; font-size:13px;">Ver todas</button>
+          </div>
+          <div class="pub-grid" id="gridPublicacionesInicio"></div>
+          <div class="sin-pubs" id="sinPublicacionesInicio">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            <h3>Todavía no publicaste nada</h3>
+            <p>Creá tu primera publicación y empezá a conectar con clientes</p>
+            <button class="btn btn-celeste" style="margin-top:16px;" onclick="abrirModalPub()">
+              Crear primera publicación
+            </button>
+          </div>
+        </div>
+
+        <!-- SECCIÓN PUBLICACIONES -->
+        <div class="seccion" id="sec-publicaciones">
+          <div class="sec-titulo-wrap">
+            <div class="sec-titulo">Mis publicaciones</div>
+            <button class="btn btn-celeste" onclick="abrirModalPub()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nueva publicación
+            </button>
+          </div>
+          <div class="limite-wrap">
+            <div class="limite-header">
+              <span class="limite-lbl">Publicaciones usadas</span>
+              <span class="limite-num" id="limitePubs2">0/10</span>
+            </div>
+            <div class="barra-track"><div class="barra-fill" id="barraLimite2" style="width:0%"></div></div>
+          </div>
+          <div class="pub-grid" id="gridPublicaciones"></div>
+          <div class="sin-pubs" id="sinPublicaciones">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            <h3>Todavía no publicaste nada</h3>
+            <p>Creá tu primera publicación y empezá a conectar con clientes</p>
+            <button class="btn btn-celeste" style="margin-top:16px;" onclick="abrirModalPub()">Crear primera publicación</button>
+          </div>
+        </div>
+
+        <!-- SECCIÓN MI NEGOCIO -->
+        <div class="seccion" id="sec-negocio">
+          <div class="sec-titulo-wrap">
+            <div class="sec-titulo">Mi negocio</div>
+          </div>
+          <div class="perfil-card">
+            <div class="perfil-cover"></div>
+            <div class="perfil-avatar">
+              <img id="logoNegocio" alt="Logo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" id="logoPlaceholder"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="perfil-body">
+              <div class="perfil-nombre" id="perfilNombre">-</div>
+              <div class="perfil-info-grid">
+                <div class="perfil-dato">
+                  <span class="perfil-dato-lbl">Localidad</span>
+                  <span class="perfil-dato-val" id="perfilLocalidad">-</span>
+                </div>
+                <div class="perfil-dato">
+                  <span class="perfil-dato-lbl">Categoría</span>
+                  <span class="perfil-dato-val" id="perfilCategoria">-</span>
+                </div>
+                <div class="perfil-dato">
+                  <span class="perfil-dato-lbl">WhatsApp</span>
+                  <span class="perfil-dato-val" id="perfilWa">-</span>
+                </div>
+                <div class="perfil-dato">
+                  <span class="perfil-dato-lbl">Instagram</span>
+                  <span class="perfil-dato-val" id="perfilIg">-</span>
+                </div>
+                <div class="perfil-dato">
+                  <span class="perfil-dato-lbl">Dirección</span>
+                  <span class="perfil-dato-val" id="perfilDir">-</span>
+                </div>
+                <div class="perfil-dato">
+                  <span class="perfil-dato-lbl">Estado</span>
+                  <span id="perfilEstado"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:var(--celeste-suave); border:1.5px solid var(--celeste-claro); border-radius:var(--r-md); padding:16px 20px; display:flex; gap:12px; align-items:flex-start;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2" width="18" height="18" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <p style="font-size:13px; color:var(--texto-2); line-height:1.6;">
+              Para editar los datos de tu negocio contactá al administrador por WhatsApp o escribinos a soporte.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Sincronizar datos del perfil en la sección "Mi negocio"
+  document.addEventListener('DOMContentLoaded', () => {
+    const observer = new MutationObserver(() => {
+      if (window.negocioActual) {
+        const n = window.negocioActual;
+        const el = (id) => document.getElementById(id);
+        el('perfilNombre') && (el('perfilNombre').textContent = n.nombre || '-');
+        el('perfilLocalidad') && (el('perfilLocalidad').textContent = n.localidad || '-');
+        el('perfilCategoria') && (el('perfilCategoria').textContent = n.categoria || '-');
+        el('perfilWa') && (el('perfilWa').textContent = n.whatsapp || '-');
+        el('perfilIg') && (el('perfilIg').textContent = n.instagram || '-');
+        el('perfilDir') && (el('perfilDir').textContent = n.direccion || '-');
+        if (el('perfilEstado')) {
+          el('perfilEstado').innerHTML = n.aprobado
+            ? '<span class="estado-badge aprobado">Aprobado</span>'
+            : '<span class="estado-badge pendiente">Pendiente de aprobación</span>';
+        }
+      }
+    });
+    observer.observe(document.getElementById('appContent'), { attributes: true, childList: true });
+  });
+</script>
+</body>
+</html>
