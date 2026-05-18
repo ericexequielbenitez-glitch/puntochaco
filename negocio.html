@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vero Pastelería — PuntoChaco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand-1: #0A0A0A;
+    --brand-2: #1A1A2E;
+    --accent: #E8FF47;
+    --accent-2: #00D4AA;
+    --surface: #F7F7F5;
+    --white: #FFFFFF;
+    --text-primary: #0A0A0A;
+    --text-secondary: #5A5A5A;
+    --text-muted: #9A9A9A;
+    --border: rgba(0,0,0,0.08);
+    --border-strong: rgba(0,0,0,0.15);
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+    --shadow-md: 0 8px 32px rgba(0,0,0,0.10);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    padding: 0 24px; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px; text-decoration: none;
+  }
+  .logo-mark {
+    width: 32px; height: 32px;
+    background: var(--brand-1);
+    border-radius: 9px;
+    position: relative; overflow: hidden;
+  }
+  .logo-mark::before {
+    content:''; position:absolute;
+    width:12px; height:12px;
+    background:var(--accent); border-radius:50%;
+    top:5px; left:5px;
+  }
+  .logo-mark::after {
+    content:''; position:absolute;
+    width:7px; height:7px;
+    background:var(--accent-2); border-radius:50%;
+    bottom:6px; right:6px;
+  }
+  .logo-text span:first-child {
+    font-family:'Syne',sans-serif; font-weight:800; font-size:16px;
+    color:var(--brand-1); letter-spacing:-0.03em; display:block;
+  }
+  .logo-text span:last-child {
+    font-size:10px; color:var(--text-muted); letter-spacing:0.05em; text-transform:uppercase;
+  }
+
+  .breadcrumb {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-muted);
+  }
+  .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--text-primary); }
+  .breadcrumb svg { width: 14px; height: 14px; }
+
+  /* COVER */
+  .business-cover {
+    height: 280px;
+    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover-pattern {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .cover-glow {
+    position: absolute;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(232,255,71,0.1) 0%, transparent 70%);
+    top: -100px; right: -100px;
+  }
+
+  /* PROFILE SECTION */
+  .profile-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+  }
+
+  .profile-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .profile-identity {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+  }
+
+  .profile-avatar {
+    width: 100px; height: 100px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, #E8FF47, #00D4AA);
+    border: 4px solid var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--brand-1);
+    margin-top: -50px;
+    box-shadow: var(--shadow-md);
+    flex-shrink: 0;
+  }
+
+  .profile-info {
+    padding-bottom: 4px;
+  }
+
+  .profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    background: rgba(0,212,170,0.1);
+    border: 1px solid rgba(0,212,170,0.25);
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-2);
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  .profile-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+
+  .profile-owner {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .profile-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 20px;
+    height: 42px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1.5px solid var(--border-strong);
+  }
+  .btn-ghost:hover { background: var(--surface); color: var(--text-primary); }
+
+  .btn-wa {
+    background: #25D366;
+    color: var(--white);
+  }
+  .btn-wa:hover { background: #22bd5c; transform: translateY(-1px); }
+
+  .btn-ig {
+    background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+    color: var(--white);
+  }
+  .btn-ig:hover { transform: translateY(-1px); filter: brightness(1.1); }
+
+  /* CONTENT LAYOUT */
+  .content-layout {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 28px;
+  }
+
+  .tab {
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .tab:hover { color: var(--text-primary); }
+
+  .tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  /* PRODUCTS GRID */
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .product-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+
+  .product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .product-img {
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--white);
+  }
+
+  .product-body { padding: 14px; }
+
+  .product-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .product-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .product-price {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+
+  /* SIDEBAR */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+  .info-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+  }
+
+  .info-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .info-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .info-row svg {
+    width: 16px; height: 16px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .info-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+
+  .info-value {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* SCHEDULE TABLE */
+  .schedule-table { width: 100%; }
+
+  .schedule-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .schedule-row:last-child { border-bottom: none; }
+
+  .schedule-day { color: var(--text-secondary); font-weight: 500; }
+  .schedule-time { color: var(--text-primary); font-weight: 500; }
+  .schedule-closed { color: var(--text-muted); font-style: italic; }
+
+  /* BOOKING CARD */
+  .booking-card {
+    background: var(--brand-2);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    color: var(--white);
+  }
+
+  .booking-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--white);
+  }
+
+  .booking-card p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .btn-book {
+    width: 100%;
+    height: 46px;
+    background: var(--accent);
+    color: var(--brand-1);
+    border: none;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-book:hover {
+    background: #d4e63a;
+    transform: translateY(-1px);
+  }
+
+  /* REPORT BTN */
+  .report-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    transition: color 0.2s;
+    margin-top: 8px;
+  }
+  .report-btn:hover { color: #FF3B3B; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .content-layout {
+      grid-template-columns: 1fr;
+    }
+    .sidebar { order: -1; }
+  }
+
+  @media (max-width: 600px) {
+    .business-cover { height: 180px; }
+    .profile-avatar { width: 72px; height: 72px; font-size: 24px; margin-top: -36px; }
+    .profile-name { font-size: 20px; }
+    .profile-header { padding-bottom: 20px; }
+    nav { padding: 0 16px; }
+    .content-layout { padding: 24px 16px 60px; }
+    .profile-section { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="logo-mark"></div>
+    <div class="logo-text">
+      <span>PuntoChaco</span>
+      <span>Emprendedores Chaqueños</span>
+    </div>
+  </a>
+  <div class="breadcrumb">
+    <a href="index.html">Inicio</a>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    <a href="#">Postres</a>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    <span>Vero Pastelería</span>
+  </div>
+</nav>
+
+<!-- COVER -->
+<div class="business-cover">
+  <div class="cover-pattern"></div>
+  <div class="cover-glow"></div>
+</div>
+
+<!-- PROFILE HEADER -->
+<div class="profile-section">
+  <div class="profile-header">
+    <div class="profile-identity">
+      <div class="profile-avatar">VP</div>
+      <div class="profile-info">
+        <div class="profile-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><polyline points="20 6 9 17 4 12"/></svg>
+          Negocio verificado
+        </div>
+        <div class="profile-name">Vero Pastelería</div>
+        <div class="profile-owner">Por Verónica González</div>
+      </div>
+    </div>
+    <div class="profile-actions">
+      <a href="#" class="btn btn-wa">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+        WhatsApp
+      </a>
+      <a href="#" class="btn btn-ig">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        Instagram
+      </a>
+      <a href="#" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        Compartir
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="content-layout">
+
+  <!-- LEFT: PRODUCTS -->
+  <div>
+    <div class="tabs">
+      <div class="tab active">Productos</div>
+      <div class="tab">Sobre el negocio</div>
+    </div>
+
+    <div class="products-grid">
+      <div class="product-card">
+        <div class="product-img" style="background: linear-gradient(135deg, #4A1942, #9B2335);">
+          Tarta
+        </div>
+        <div class="product-body">
+          <div class="product-title">Tarta de Frutos Rojos</div>
+          <div class="product-desc">Masa de manteca, crema pastelera y frutos rojos frescos de temporada</div>
+          <div class="product-price">$4.500</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-img" style="background: linear-gradient(135deg, #3D1C02, #8B4513);">
+          Choco
+        </div>
+        <div class="product-body">
+          <div class="product-title">Brownie de Chocolate</div>
+          <div class="product-desc">Brownie húmedo con chips de chocolate y nueces tostadas</div>
+          <div class="product-price">$1.800</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-img" style="background: linear-gradient(135deg, #1A472A, #2D6A4F);">
+          Cake
+        </div>
+        <div class="product-body">
+          <div class="product-title">Torta Personalizada</div>
+          <div class="product-desc">Diseño a pedido para cumpleaños, bautismos y eventos especiales</div>
+          <div class="product-price">Desde $8.000</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-img" style="background: linear-gradient(135deg, #0D3B7A, #1A5CB8);">
+          Alfaj
+        </div>
+        <div class="product-body">
+          <div class="product-title">Alfajores Artesanales</div>
+          <div class="product-desc">Pack x6 - Rellenos de dulce de leche y bañados en chocolate</div>
+          <div class="product-price">$2.200</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-img" style="background: linear-gradient(135deg, #5C1A1A, #8B0000);">
+          Masa
+        </div>
+        <div class="product-body">
+          <div class="product-title">Masas Finas</div>
+          <div class="product-desc">Surtido de masas para eventos, 100 unidades mínimo</div>
+          <div class="product-price">$5.000 / 100u</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-img" style="background: linear-gradient(135deg, #2C1810, #6B3A2A);">
+          Muffin
+        </div>
+        <div class="product-body">
+          <div class="product-title">Muffins Clásicos</div>
+          <div class="product-desc">Vainilla, chocolate o blueberry. Pack x4 unidades</div>
+          <div class="product-price">$1.600</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="report-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+      Reportar este negocio
+    </button>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- BOOKING -->
+    <div class="booking-card">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <div style="width:8px; height:8px; background:var(--accent); border-radius:50%; animation: pulseG 2s ease infinite;"></div>
+        <span style="font-size:12px; color:rgba(255,255,255,0.5); font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Turnos disponibles</span>
+      </div>
+      <h3>Reservá tu pedido</h3>
+      <p>Coordiná el retiro o entrega de tu pedido directamente con Verónica.</p>
+      <button class="btn-book">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Ver disponibilidad
+      </button>
+    </div>
+
+    <!-- INFO -->
+    <div class="info-card">
+      <h3>Información</h3>
+      <div class="info-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div>
+          <div class="info-label">Dirección</div>
+          <div class="info-value">Av. Sarmiento 1240, B° Centro</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div>
+          <div class="info-label">Localidad</div>
+          <div class="info-value">Resistencia, Chaco</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h8M4 18h4"/></svg>
+        <div>
+          <div class="info-label">Categoría</div>
+          <div class="info-value">Postres / Pastelería</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="info-card">
+      <h3>Horarios</h3>
+      <div class="schedule-table">
+        <div class="schedule-row">
+          <span class="schedule-day">Lun — Vie</span>
+          <span class="schedule-time">9:00 — 19:00</span>
+        </div>
+        <div class="schedule-row">
+          <span class="schedule-day">Sábado</span>
+          <span class="schedule-time">9:00 — 14:00</span>
+        </div>
+        <div class="schedule-row">
+          <span class="schedule-day">Domingo</span>
+          <span class="schedule-closed">Cerrado</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+@keyframes pulseG {
+  0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)}
+}
+</style>
+
+</body>
+</html>

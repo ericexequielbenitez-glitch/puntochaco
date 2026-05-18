@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crear cuenta — PuntoChaco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand-1: #0A0A0A;
+    --brand-2: #1A1A2E;
+    --accent: #E8FF47;
+    --accent-2: #00D4AA;
+    --surface: #F7F7F5;
+    --white: #FFFFFF;
+    --text-primary: #0A0A0A;
+    --text-secondary: #5A5A5A;
+    --text-muted: #9A9A9A;
+    --border: rgba(0,0,0,0.1);
+    --error: #FF3B3B;
+    --success: #00C48C;
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .logo-mark {
+    width: 32px; height: 32px;
+    background: var(--brand-1);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .logo-mark::before {
+    content: '';
+    position: absolute;
+    width: 12px; height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 5px; left: 5px;
+  }
+
+  .logo-mark::after {
+    content: '';
+    position: absolute;
+    width: 7px; height: 7px;
+    background: var(--accent-2);
+    border-radius: 50%;
+    bottom: 6px; right: 6px;
+  }
+
+  .logo-text span:first-child {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--brand-1);
+    letter-spacing: -0.03em;
+    display: block;
+  }
+
+  .logo-text span:last-child {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* MAIN */
+  main {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 16px 80px;
+  }
+
+  .register-container {
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .register-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .register-header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+  }
+
+  .register-header p {
+    font-size: 15px;
+    color: var(--text-secondary);
+  }
+
+  /* TYPE SELECTOR */
+  .type-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .type-option {
+    cursor: pointer;
+  }
+
+  .type-option input { display: none; }
+
+  .type-option-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 16px;
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .type-option-inner:hover {
+    border-color: rgba(0,0,0,0.3);
+  }
+
+  .type-option input:checked + .type-option-inner {
+    border-color: var(--brand-1);
+    background: var(--brand-1);
+    color: var(--white);
+  }
+
+  .type-option input:checked + .type-option-inner .type-icon { background: rgba(255,255,255,0.12); }
+  .type-option input:checked + .type-option-inner .type-icon svg { stroke: var(--accent); }
+  .type-option input:checked + .type-option-inner .type-label { color: var(--white); }
+  .type-option input:checked + .type-option-inner .type-desc { color: rgba(255,255,255,0.5); }
+
+  .type-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .type-icon svg { width: 22px; height: 22px; }
+
+  .type-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .type-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  /* FORM CARD */
+  .form-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    padding: 32px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  }
+
+  .form-section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+
+  .input-wrap svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px; height: 16px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    height: 46px;
+    padding: 0 14px 0 42px;
+    background: var(--surface);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.2s;
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--brand-1);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(10,10,10,0.06);
+  }
+
+  input.no-icon, select.no-icon {
+    padding-left: 14px;
+  }
+
+  input.error-input {
+    border-color: var(--error);
+    background: rgba(255,59,59,0.04);
+  }
+
+  textarea {
+    height: auto;
+    min-height: 80px;
+    padding: 12px 14px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  .field-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .field-error {
+    font-size: 12px;
+    color: var(--error);
+    display: none;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .field-error.show { display: flex; }
+
+  /* ERROR BANNER */
+  .error-banner {
+    display: none;
+    background: rgba(255,59,59,0.06);
+    border: 1.5px solid rgba(255,59,59,0.2);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .error-banner.show { display: flex; }
+
+  .error-banner svg {
+    width: 18px; height: 18px;
+    color: var(--error);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .error-banner-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--error);
+    line-height: 1.5;
+  }
+
+  /* AGE BLOCK OVERLAY */
+  .age-block-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,10,0.8);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .age-block-overlay.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+
+  .age-block-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 48px 40px;
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+    animation: scaleIn 0.3s ease;
+  }
+
+  @keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .age-block-icon {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(255,59,59,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+  }
+
+  .age-block-icon svg { width: 32px; height: 32px; color: var(--error); }
+
+  .age-block-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+  }
+
+  .age-block-text {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+
+  /* SELLER FIELDS */
+  .seller-fields {
+    display: none;
+    margin-top: 8px;
+  }
+
+  .seller-fields.show { display: block; }
+
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  /* SCHEDULE GRID */
+  .schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .day-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .day-toggle input { display: none; }
+
+  .day-toggle-inner {
+    width: 100%;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1.5px solid transparent;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .day-toggle input:checked + .day-toggle-inner {
+    background: var(--brand-1);
+    color: var(--white);
+    border-color: var(--brand-1);
+  }
+
+  /* PASSWORD STRENGTH */
+  .password-strength {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .strength-bar {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+
+  .strength-bar.active-weak { background: var(--error); }
+  .strength-bar.active-medium { background: #FF9500; }
+  .strength-bar.active-strong { background: var(--success); }
+
+  .strength-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* CHECKBOX */
+  .checkbox-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .checkbox-group input[type="checkbox"] {
+    width: 18px; height: 18px;
+    padding: 0;
+    flex-shrink: 0;
+    accent-color: var(--brand-1);
+    margin-top: 2px;
+  }
+
+  .checkbox-group label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    cursor: pointer;
+  }
+
+  .checkbox-group label a {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* SUBMIT BTN */
+  .btn-submit {
+    width: 100%;
+    height: 52px;
+    background: var(--brand-1);
+    color: var(--white);
+    border: none;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-submit:hover {
+    background: #2A2A2A;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  .btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* LOGIN LINK */
+  .login-link {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .login-link a {
+    color: var(--text-primary);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    main { padding: 32px 12px 60px; }
+    .form-card { padding: 24px 20px; }
+    .form-row { grid-template-columns: 1fr; }
+    .age-block-card { padding: 36px 24px; }
+    .schedule-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="logo-mark"></div>
+    <div class="logo-text">
+      <span>PuntoChaco</span>
+      <span>Emprendedores Chaqueños</span>
+    </div>
+  </a>
+  <a href="login.html" style="font-size:14px; color:var(--text-secondary); text-decoration:none; font-weight:500;">
+    ¿Ya tenés cuenta? <strong style="color:var(--text-primary);">Iniciar sesión</strong>
+  </a>
+</nav>
+
+<!-- AGE BLOCK OVERLAY -->
+<div class="age-block-overlay" id="ageBlockOverlay">
+  <div class="age-block-card">
+    <div class="age-block-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div class="age-block-title">Acceso restringido</div>
+    <p class="age-block-text">Debes ser mayor de 18 años para utilizar esta plataforma.</p>
+    <button onclick="document.getElementById('ageBlockOverlay').classList.remove('show')"
+      style="width:100%; height:48px; background:var(--brand-1); color:var(--white); border:none; border-radius:100px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; cursor:pointer;">
+      Entendido
+    </button>
+  </div>
+</div>
+
+<main>
+  <div class="register-container">
+
+    <div class="register-header">
+      <h1>Crear cuenta</h1>
+      <p>Unite a la comunidad de emprendedores del Chaco</p>
+    </div>
+
+    <!-- TYPE SELECTOR -->
+    <div class="type-selector">
+      <label class="type-option">
+        <input type="radio" name="accountType" value="buyer" checked onchange="handleTypeChange()">
+        <div class="type-option-inner">
+          <div class="type-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          </div>
+          <div class="type-label">Comprador</div>
+          <div class="type-desc">Explorá y comprá de emprendedores locales</div>
+        </div>
+      </label>
+      <label class="type-option">
+        <input type="radio" name="accountType" value="seller" onchange="handleTypeChange()">
+        <div class="type-option-inner">
+          <div class="type-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <div class="type-label">Vendedor</div>
+          <div class="type-desc">Publicá tu negocio y llegá a más clientes</div>
+        </div>
+      </label>
+    </div>
+
+    <!-- ERROR BANNER -->
+    <div class="error-banner" id="errorBanner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div class="error-banner-text" id="errorBannerText"></div>
+    </div>
+
+    <!-- FORM -->
+    <div class="form-card">
+      <form id="registerForm" novalidate>
+
+        <!-- PERSONAL DATA -->
+        <div class="form-section-title">Datos personales</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">Nombre *</label>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="text" id="firstName" placeholder="Tu nombre" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="lastName">Apellido *</label>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="text" id="lastName" placeholder="Tu apellido" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="birthDate">Fecha de nacimiento *</label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <input type="date" id="birthDate" required onchange="validateAge(this.value)">
+          </div>
+          <div class="field-hint">Debes ser mayor de 18 años para registrarte.</div>
+          <div class="field-error" id="ageError">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Debes ser mayor de 18 años
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input type="email" id="email" placeholder="tu@email.com" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña *</label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input type="password" id="password" placeholder="Mínimo 8 caracteres" required oninput="checkPasswordStrength(this.value)">
+          </div>
+          <div class="password-strength">
+            <div class="strength-bar" id="bar1"></div>
+            <div class="strength-bar" id="bar2"></div>
+            <div class="strength-bar" id="bar3"></div>
+            <div class="strength-bar" id="bar4"></div>
+          </div>
+          <div class="strength-label" id="strengthLabel"></div>
+        </div>
+
+        <!-- SELLER FIELDS -->
+        <div class="seller-fields" id="sellerFields">
+          <hr class="section-divider">
+          <div class="form-section-title">Datos de tu negocio</div>
+
+          <div class="form-group">
+            <label for="businessName">Nombre del local *</label>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <input type="text" id="businessName" placeholder="Ej: Panadería El Sol" oninput="checkBusinessName(this.value)">
+            </div>
+            <div class="field-error" id="businessNameError">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Este nombre ya está registrado o es muy similar a uno existente
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="whatsapp">WhatsApp</label>
+              <div class="input-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <input type="tel" id="whatsapp" placeholder="+54 362 ...">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="instagram">Instagram</label>
+              <div class="input-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                <input type="text" id="instagram" placeholder="@tunegocio">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="localidad">Localidad *</label>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <select id="localidad" class="no-icon" style="padding-left:42px;">
+                <option value="">Seleccioná tu localidad</option>
+                <option>Resistencia</option>
+                <option>Barranqueras</option>
+                <option>Fontana</option>
+                <option>Puerto Vilelas</option>
+                <option>Sáenz Peña</option>
+                <option>Villa Ángela</option>
+                <option>Charata</option>
+                <option>General San Martín</option>
+                <option>Castelli</option>
+                <option>Quitilipi</option>
+                <option>Las Breñas</option>
+                <option>Juan José Castelli</option>
+                <option>Makallé</option>
+                <option>Roque Sáenz Peña</option>
+                <option>Otras</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="address">Dirección</label>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <input type="text" id="address" placeholder="Calle, número, barrio">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Categoría del negocio *</label>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+              <select class="no-icon" style="padding-left:42px;">
+                <option value="">Seleccioná una categoría</option>
+                <optgroup label="Productos">
+                  <option>Postres</option>
+                  <option>Comida rápida</option>
+                  <option>Viandas</option>
+                  <option>Electrónica</option>
+                  <option>Petshop</option>
+                  <option>Carnicería</option>
+                  <option>Kiosco</option>
+                  <option>Avícola</option>
+                  <option>Perfumería</option>
+                  <option>Manualidades</option>
+                  <option>Diseño gráfico e impresiones</option>
+                  <option>Música</option>
+                  <option>Otros productos</option>
+                </optgroup>
+                <optgroup label="Servicios">
+                  <option>Barbería</option>
+                  <option>Manicuría</option>
+                  <option>Cosmetología</option>
+                  <option>Tratamientos de piel</option>
+                  <option>Educación</option>
+                  <option>Animales</option>
+                  <option>Deportes</option>
+                  <option>Entrenamiento personal</option>
+                  <option>Reparaciones</option>
+                  <option>Fotografía</option>
+                  <option>Diseño</option>
+                  <option>Marketing</option>
+                  <option>Tecnología</option>
+                  <option>Otros servicios</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Descripción del negocio</label>
+            <textarea id="description" placeholder="Contales a tus clientes qué ofrecés..." style="padding-left:14px;"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Horarios de atención</label>
+            <div class="schedule-grid">
+              <label class="day-toggle"><input type="checkbox" value="Lun"><div class="day-toggle-inner">Lun</div></label>
+              <label class="day-toggle"><input type="checkbox" value="Mar"><div class="day-toggle-inner">Mar</div></label>
+              <label class="day-toggle"><input type="checkbox" value="Mié"><div class="day-toggle-inner">Mié</div></label>
+              <label class="day-toggle"><input type="checkbox" value="Jue"><div class="day-toggle-inner">Jue</div></label>
+              <label class="day-toggle"><input type="checkbox" value="Vie"><div class="day-toggle-inner">Vie</div></label>
+              <label class="day-toggle"><input type="checkbox" value="Sáb"><div class="day-toggle-inner">Sáb</div></label>
+              <label class="day-toggle"><input type="checkbox" value="Dom"><div class="day-toggle-inner">Dom</div></label>
+            </div>
+            <div class="form-row" style="margin-top:12px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size:12px;">Apertura</label>
+                <input type="time" class="no-icon" style="padding-left:14px;" value="09:00">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size:12px;">Cierre</label>
+                <input type="time" class="no-icon" style="padding-left:14px;" value="18:00">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TERMS -->
+        <div class="checkbox-group" style="margin-top: 8px;">
+          <input type="checkbox" id="terms" required>
+          <label for="terms">Acepto los <a href="#">Términos de Uso</a> y la <a href="#">Política de Privacidad</a> de PuntoChaco. Confirmo que soy mayor de 18 años.</label>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <span id="submitText">Crear cuenta</span>
+          <svg id="submitIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+
+        <div class="login-link">
+          ¿Ya tenés cuenta? <a href="login.html">Iniciá sesión</a>
+        </div>
+
+      </form>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  // Age validation
+  function validateAge(dateStr) {
+    if (!dateStr) return true;
+    const birth = new Date(dateStr);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    const input = document.getElementById('birthDate');
+    const error = document.getElementById('ageError');
+    if (age < 18) {
+      input.classList.add('error-input');
+      error.classList.add('show');
+      document.getElementById('ageBlockOverlay').classList.add('show');
+      return false;
+    } else {
+      input.classList.remove('error-input');
+      error.classList.remove('show');
+      return true;
+    }
+  }
+
+  // Account type toggle
+  function handleTypeChange() {
+    const isSeller = document.querySelector('input[name="accountType"]:checked').value === 'seller';
+    const sellerFields = document.getElementById('sellerFields');
+    if (isSeller) {
+      sellerFields.classList.add('show');
+    } else {
+      sellerFields.classList.remove('show');
+    }
+  }
+
+  // Password strength
+  function checkPasswordStrength(pwd) {
+    const bars = [1,2,3,4].map(i => document.getElementById('bar'+i));
+    const label = document.getElementById('strengthLabel');
+    bars.forEach(b => { b.className = 'strength-bar'; });
+    if (!pwd) { label.textContent = ''; return; }
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    const labels = ['', 'Débil', 'Regular', 'Buena', 'Fuerte'];
+    const classes = ['', 'active-weak', 'active-medium', 'active-strong', 'active-strong'];
+    label.textContent = labels[score] || '';
+    for (let i = 0; i < score; i++) {
+      bars[i].classList.add(classes[score]);
+    }
+  }
+
+  // Business name check (simulated)
+  const takenNames = ['panaderia el sol', 'vero pasteleria', 'black barber', 'nails and more'];
+  function similarity(a, b) {
+    a = a.toLowerCase().replace(/[^a-z0-9 ]/g,'');
+    b = b.toLowerCase().replace(/[^a-z0-9 ]/g,'');
+    if (a === b) return 1;
+    const longer = a.length > b.length ? a : b;
+    const shorter = a.length > b.length ? b : a;
+    let matches = 0;
+    for (let i = 0; i < shorter.length; i++) {
+      if (longer.includes(shorter[i])) matches++;
+    }
+    return matches / longer.length;
+  }
+
+  function checkBusinessName(value) {
+    const error = document.getElementById('businessNameError');
+    const input = document.getElementById('businessName');
+    if (!value) { error.classList.remove('show'); input.classList.remove('error-input'); return; }
+    const isTaken = takenNames.some(n => similarity(n, value) > 0.8);
+    if (isTaken) {
+      error.classList.add('show');
+      input.classList.add('error-input');
+    } else {
+      error.classList.remove('show');
+      input.classList.remove('error-input');
+    }
+  }
+
+  // Form submit
+  document.getElementById('registerForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const birthDate = document.getElementById('birthDate').value;
+    if (!validateAge(birthDate)) return;
+    if (!document.getElementById('terms').checked) {
+      showError('Debes aceptar los Términos de Uso para continuar.');
+      return;
+    }
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    document.getElementById('submitText').textContent = 'Creando cuenta...';
+    // Simulate API call
+    setTimeout(() => {
+      btn.disabled = false;
+      document.getElementById('submitText').textContent = 'Crear cuenta';
+    }, 2000);
+  });
+
+  function showError(msg) {
+    const banner = document.getElementById('errorBanner');
+    document.getElementById('errorBannerText').textContent = msg;
+    banner.classList.add('show');
+    banner.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+</script>
+</body>
+</html>
