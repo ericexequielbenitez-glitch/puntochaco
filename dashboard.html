@@ -282,9 +282,83 @@
     await cargarPublicaciones();
   };
 
-  window.cerrarSesion = async function() {
-    await signOut(auth);
-    window.location.href = "index.html";
+  window.previewEditLogo = function(input) {
+    const f = input.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = e => {
+      const prev = document.getElementById('editLogoPreview');
+      const wrap = document.getElementById('editLogoPreviewWrap');
+      const txt  = document.getElementById('editLogoTexto');
+      if(prev) { prev.src = e.target.result; }
+      if(wrap) wrap.style.display = 'block';
+      if(txt)  txt.textContent = 'Logo seleccionado ✓';
+    };
+    r.readAsDataURL(f);
+  };
+
+  window.guardarDatosNegocio = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnGuardarNegocio');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    try {
+      const nombre      = document.getElementById('editNombre').value.trim();
+      const localidad   = document.getElementById('editLocalidad').value;
+      const whatsapp    = document.getElementById('editWhatsapp').value.trim();
+      const instagram   = document.getElementById('editInstagram').value.trim();
+      const direccion   = document.getElementById('editDireccion').value.trim();
+      const descripcion = document.getElementById('editDescripcion').value.trim();
+      const apertura    = document.getElementById('editApertura').value;
+      const cierre      = document.getElementById('editCierre').value;
+      const dias = [...document.querySelectorAll('.dia-check-edit:checked')].map(d => d.value);
+
+      let logoUrl = negocioActual?.logoUrl || '';
+      const logoFile = document.getElementById('editLogo').files[0];
+      if (logoFile) {
+        btn.textContent = 'Subiendo logo...';
+        const fd = new FormData();
+        fd.append('file', logoFile);
+        fd.append('upload_preset', CLOUDINARY_PRESET);
+        fd.append('folder', 'punto-chaco/logos');
+        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:'POST', body:fd });
+        const data = await res.json();
+        logoUrl = data.secure_url || logoUrl;
+      }
+
+      const slug = nombre.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+
+      const datos = {
+        nombre, localidad, whatsapp, instagram, direccion, descripcion, logoUrl, slug,
+        horarios: { dias, apertura, cierre },
+        actualizadoEn: new Date().toISOString()
+      };
+
+      await updateDoc(doc(db, 'negocios', usuarioActual.uid), datos);
+      negocioActual = { ...negocioActual, ...datos };
+      window.negocioActual = negocioActual;
+
+      // Actualizar topbar
+      document.getElementById('nombreNegocio').textContent = nombre || 'Mi negocio';
+
+      // Actualizar avatar
+      const wrap  = document.getElementById('dashAvatarWrap');
+      const letra = document.getElementById('dashAvatarLetra');
+      if (logoUrl) {
+        wrap.style.backgroundImage = `url('${logoUrl}')`;
+        if(letra) letra.style.display = 'none';
+      }
+
+      mostrarToast('¡Datos guardados correctamente!', 'ok');
+    } catch(err) {
+      mostrarToast('Error al guardar. Intentá de nuevo.', 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg> Guardar cambios';
   };
 
   function setBtnGuardar(cargando) {
@@ -972,48 +1046,142 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
           <div class="sec-titulo-wrap">
             <div class="sec-titulo">Mi negocio</div>
           </div>
-          <div class="perfil-card">
-            <div class="perfil-cover"></div>
-            <div class="perfil-avatar">
-              <img id="logoNegocio" alt="Logo">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" id="logoPlaceholder"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </div>
-            <div class="perfil-body">
-              <div class="perfil-nombre" id="perfilNombre">-</div>
-              <div class="perfil-info-grid">
-                <div class="perfil-dato">
-                  <span class="perfil-dato-lbl">Localidad</span>
-                  <span class="perfil-dato-val" id="perfilLocalidad">-</span>
+
+          <!-- PERFIL CARD con stats -->
+          <div class="perfil-card" style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;">
+            <div style="height:80px;background:linear-gradient(135deg,var(--celeste),var(--verde));"></div>
+            <div style="padding:0 24px 24px;">
+              <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:-36px;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+                <div id="dashAvatarWrap" style="width:72px;height:72px;border-radius:var(--r-md);border:3px solid var(--blanco);background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--blanco);overflow:hidden;box-shadow:0 4px 16px rgba(42,172,226,0.2);flex-shrink:0;background-size:cover;background-position:center;">
+                  <span id="dashAvatarLetra">?</span>
                 </div>
-                <div class="perfil-dato">
-                  <span class="perfil-dato-lbl">Categoría</span>
-                  <span class="perfil-dato-val" id="perfilCategoria">-</span>
-                </div>
-                <div class="perfil-dato">
-                  <span class="perfil-dato-lbl">WhatsApp</span>
-                  <span class="perfil-dato-val" id="perfilWa">-</span>
-                </div>
-                <div class="perfil-dato">
-                  <span class="perfil-dato-lbl">Instagram</span>
-                  <span class="perfil-dato-val" id="perfilIg">-</span>
-                </div>
-                <div class="perfil-dato">
-                  <span class="perfil-dato-lbl">Dirección</span>
-                  <span class="perfil-dato-val" id="perfilDir">-</span>
-                </div>
-                <div class="perfil-dato">
-                  <span class="perfil-dato-lbl">Estado</span>
-                  <span id="perfilEstado"></span>
+                <!-- STATS seguidores -->
+                <div style="display:flex;gap:24px;padding-bottom:4px;">
+                  <div style="text-align:center;">
+                    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--texto);" id="dashSeguidores">0</div>
+                    <div style="font-size:11px;color:var(--texto-3);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Seguidores</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--texto);" id="dashSiguiendo">0</div>
+                    <div style="font-size:11px;color:var(--texto-3);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Siguiendo</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--texto);" id="dashPubs">0</div>
+                    <div style="font-size:11px;color:var(--texto-3);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Publicaciones</div>
+                  </div>
                 </div>
               </div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;" id="dashNombre">-</div>
+                <!-- Badge verificado (solo si está verificado) -->
+                <div id="dashVerificadoBadge" style="display:none;">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                    <circle cx="12" cy="12" r="11" fill="#5BADD6"/>
+                    <polyline points="7 12 10.5 15.5 17 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+              <div style="font-size:13px;color:var(--texto-3);" id="dashCategoria">-</div>
             </div>
           </div>
 
-          <div style="background:var(--celeste-suave); border:1.5px solid var(--celeste-claro); border-radius:var(--r-md); padding:16px 20px; display:flex; gap:12px; align-items:flex-start;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2" width="18" height="18" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <p style="font-size:13px; color:var(--texto-2); line-height:1.6;">
-              Para editar los datos de tu negocio contactá al administrador por WhatsApp o escribinos a soporte.
-            </p>
+          <!-- FORMULARIO EDICIÓN -->
+          <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);padding:28px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--texto-3);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--borde);">
+              Editar información del negocio
+            </div>
+
+            <form id="formEditarNegocio" onsubmit="guardarDatosNegocio(event)" novalidate>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="grupo">
+                  <label for="editNombre">Nombre del negocio</label>
+                  <div style="position:relative;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--texto-3);pointer-events:none;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    <input type="text" id="editNombre" style="padding-left:38px;" placeholder="Nombre del negocio">
+                  </div>
+                </div>
+                <div class="grupo">
+                  <label for="editLocalidad">Localidad</label>
+                  <select id="editLocalidad">
+                    <option value="">Seleccioná</option>
+                    <option>Resistencia</option><option>Barranqueras</option>
+                    <option>Fontana</option><option>Puerto Vilelas</option>
+                    <option>Sáenz Peña</option><option>Villa Ángela</option>
+                    <option>Charata</option><option>General San Martín</option>
+                    <option>Castelli</option><option>Quitilipi</option>
+                    <option>Las Breñas</option><option>Otras</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="grupo">
+                  <label for="editWhatsapp">WhatsApp</label>
+                  <div style="position:relative;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--texto-3);pointer-events:none;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72"/></svg>
+                    <input type="tel" id="editWhatsapp" style="padding-left:38px;" placeholder="+54 362 ...">
+                  </div>
+                </div>
+                <div class="grupo">
+                  <label for="editInstagram">Instagram</label>
+                  <div style="position:relative;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--texto-3);pointer-events:none;"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg>
+                    <input type="text" id="editInstagram" style="padding-left:38px;" placeholder="@tunegocio">
+                  </div>
+                </div>
+              </div>
+
+              <div class="grupo">
+                <label for="editDireccion">Dirección</label>
+                <div style="position:relative;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--texto-3);pointer-events:none;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <input type="text" id="editDireccion" style="padding-left:38px;" placeholder="Calle, número, barrio">
+                </div>
+              </div>
+
+              <div class="grupo">
+                <label for="editDescripcion">Descripción del negocio</label>
+                <textarea id="editDescripcion" placeholder="Contales a tus clientes qué ofrecés..."></textarea>
+              </div>
+
+              <!-- Logo -->
+              <div class="grupo">
+                <label>Logo del negocio</label>
+                <label class="upload-area" for="editLogo" style="display:block;cursor:pointer;">
+                  <input type="file" id="editLogo" accept="image/*" onchange="previewEditLogo(this)" style="display:none;">
+                  <div id="editLogoPreviewWrap" style="display:none;margin-bottom:8px;">
+                    <img id="editLogoPreview" style="width:80px;height:80px;border-radius:var(--r-md);object-fit:cover;" alt="Logo">
+                  </div>
+                  <p style="font-size:13px;color:var(--texto-3);" id="editLogoTexto">Hacé click para cambiar el logo</p>
+                </label>
+              </div>
+
+              <!-- Horarios -->
+              <div class="grupo">
+                <label>Días de atención</label>
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:12px;">
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Lun"><div class="dia-inner">Lun</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Mar"><div class="dia-inner">Mar</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Mié"><div class="dia-inner">Mié</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Jue"><div class="dia-inner">Jue</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Vie"><div class="dia-inner">Vie</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Sáb"><div class="dia-inner">Sáb</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Dom"><div class="dia-inner">Dom</div></label>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div class="grupo" style="margin-bottom:0;"><label style="font-size:12px;">Apertura</label><input type="time" id="editApertura" value="09:00" style="padding-left:12px;"></div>
+                  <div class="grupo" style="margin-bottom:0;"><label style="font-size:12px;">Cierre</label><input type="time" id="editCierre" value="18:00" style="padding-left:12px;"></div>
+                </div>
+              </div>
+
+              <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:8px;border-top:1px solid var(--borde);margin-top:8px;">
+                <button type="submit" class="btn btn-celeste" id="btnGuardarNegocio">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+                  Guardar cambios
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -1026,24 +1194,65 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
   // Sincronizar datos del perfil en la sección "Mi negocio"
   document.addEventListener('DOMContentLoaded', () => {
     const observer = new MutationObserver(() => {
-      if (window.negocioActual) {
-        const n = window.negocioActual;
-        const el = (id) => document.getElementById(id);
-        el('perfilNombre') && (el('perfilNombre').textContent = n.nombre || '-');
-        el('perfilLocalidad') && (el('perfilLocalidad').textContent = n.localidad || '-');
-        el('perfilCategoria') && (el('perfilCategoria').textContent = n.categoria || '-');
-        el('perfilWa') && (el('perfilWa').textContent = n.whatsapp || '-');
-        el('perfilIg') && (el('perfilIg').textContent = n.instagram || '-');
-        el('perfilDir') && (el('perfilDir').textContent = n.direccion || '-');
-        if (el('perfilEstado')) {
-          el('perfilEstado').innerHTML = n.aprobado
-            ? '<span class="estado-badge aprobado">Aprobado</span>'
-            : '<span class="estado-badge pendiente">Pendiente de aprobación</span>';
-        }
-      }
+      if (window.negocioActual) rellenarFormEdicion(window.negocioActual);
     });
-    observer.observe(document.getElementById('appContent'), { attributes: true, childList: true });
+    observer.observe(document.getElementById('appContent'), { attributes: true, childList: true, subtree: true });
   });
+
+  function rellenarFormEdicion(n) {
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
+    set('editNombre', n.nombre);
+    set('editLocalidad', n.localidad);
+    set('editWhatsapp', n.whatsapp);
+    set('editInstagram', n.instagram);
+    set('editDireccion', n.direccion);
+    set('editDescripcion', n.descripcion);
+    set('editApertura', n.horarios?.apertura || '09:00');
+    set('editCierre', n.horarios?.cierre || '18:00');
+
+    // Días
+    document.querySelectorAll('.dia-check-edit').forEach(cb => {
+      cb.checked = (n.horarios?.dias || []).includes(cb.value);
+    });
+
+    // Avatar
+    const wrap = document.getElementById('dashAvatarWrap');
+    const letra = document.getElementById('dashAvatarLetra');
+    if (n.logoUrl) {
+      wrap.style.backgroundImage = `url('${n.logoUrl}')`;
+      if(letra) letra.style.display = 'none';
+    } else {
+      if(letra) letra.textContent = (n.nombre||'?')[0].toUpperCase();
+    }
+
+    // Info
+    const dashNombre = document.getElementById('dashNombre');
+    const dashCat    = document.getElementById('dashCategoria');
+    if(dashNombre) dashNombre.textContent = n.nombre || '-';
+    if(dashCat)    dashCat.textContent    = n.categoria || '-';
+
+    // Badge verificado
+    const badge = document.getElementById('dashVerificadoBadge');
+    if(badge) badge.style.display = n.verificado ? 'inline-flex' : 'none';
+
+    // Logo preview
+    if (n.logoUrl) {
+      const prev = document.getElementById('editLogoPreview');
+      const wrap2 = document.getElementById('editLogoPreviewWrap');
+      const txt = document.getElementById('editLogoTexto');
+      if(prev) prev.src = n.logoUrl;
+      if(wrap2) wrap2.style.display = 'block';
+      if(txt) txt.textContent = 'Hacé click para cambiar el logo';
+    }
+
+    // Seguidores
+    const segs = document.getElementById('dashSeguidores');
+    const sigs = document.getElementById('dashSiguiendo');
+    const pubs = document.getElementById('dashPubs');
+    if(segs) segs.textContent = n.seguidores || 0;
+    if(sigs) sigs.textContent = n.siguiendo  || 0;
+    if(pubs) pubs.textContent = window.publicaciones?.length || 0;
+  }
 </script>
 </body>
 </html>
