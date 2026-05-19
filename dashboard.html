@@ -339,6 +339,13 @@
   window.guardarDatosNegocio = async function(e) {
     e.preventDefault();
     const btn = document.getElementById('btnGuardarNegocio');
+    const btnTextoOriginal = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg> Guardar cambios';
+
+    const resetBtn = () => {
+      btn.disabled = false;
+      btn.innerHTML = btnTextoOriginal;
+    };
+
     btn.disabled = true;
     btn.textContent = 'Guardando...';
 
@@ -354,19 +361,30 @@
       const dias = [...document.querySelectorAll('.dia-check-edit:checked')].map(d => d.value);
 
       let logoUrl = negocioActual?.logoUrl || '';
-      const logoFile = document.getElementById('editLogo').files[0];
+      const logoInput = document.getElementById('editLogo');
+      const logoFile  = logoInput && logoInput.files && logoInput.files[0];
+
       if (logoFile) {
         btn.textContent = 'Subiendo logo...';
-        const fd = new FormData();
-        fd.append('file', logoFile);
-        fd.append('upload_preset', CLOUDINARY_PRESET);
-        fd.append('folder', 'punto-chaco/logos');
-        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:'POST', body:fd });
-        const data = await res.json();
-        logoUrl = data.secure_url || logoUrl;
+        try {
+          const fd = new FormData();
+          fd.append('file', logoFile);
+          fd.append('upload_preset', CLOUDINARY_PRESET);
+          fd.append('folder', 'punto-chaco/logos');
+          const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+            method: 'POST', body: fd
+          });
+          const data = await res.json();
+          if (data.secure_url) logoUrl = data.secure_url;
+          else mostrarToast('No se pudo subir el logo, se guardó el resto igual.', 'error');
+        } catch(logoErr) {
+          mostrarToast('Error subiendo logo, se guardó el resto igual.', 'error');
+        }
       }
 
-      const slug = nombre.toLowerCase()
+      btn.textContent = 'Guardando...';
+
+      const slug = (nombre || 'negocio').toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
         .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 
@@ -381,23 +399,24 @@
       window.negocioActual = negocioActual;
 
       // Actualizar topbar
-      document.getElementById('nombreNegocio').textContent = nombre || 'Mi negocio';
+      const topbarNombre = document.getElementById('nombreNegocio');
+      if(topbarNombre) topbarNombre.textContent = nombre || 'Mi negocio';
 
-      // Actualizar avatar
-      const wrap  = document.getElementById('dashAvatarWrap');
-      const letra = document.getElementById('dashAvatarLetra');
+      // Actualizar avatar si hay logo
       if (logoUrl) {
-        wrap.style.backgroundImage = `url('${logoUrl}')`;
+        const wrap  = document.getElementById('dashAvatarWrap');
+        const letra = document.getElementById('dashAvatarLetra');
+        if(wrap)  wrap.style.backgroundImage = `url('${logoUrl}')`;
         if(letra) letra.style.display = 'none';
       }
 
       mostrarToast('¡Datos guardados correctamente!', 'ok');
     } catch(err) {
-      mostrarToast('Error al guardar. Intentá de nuevo.', 'error');
+      console.error('Error guardando:', err);
+      mostrarToast('Error al guardar: ' + (err.message || 'Intentá de nuevo.'), 'error');
     }
 
-    btn.disabled = false;
-    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg> Guardar cambios';
+    resetBtn();
   };
 
   function setBtnGuardar(cargando) {
