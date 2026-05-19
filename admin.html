@@ -102,6 +102,7 @@
             ${!n.aprobado ? `<button onclick="aprobarNegocio('${n.id}')" class="btn-accion btn-ok">Aprobar</button>` : ''}
             ${n.aprobado  ? `<button onclick="rechazarNegocio('${n.id}')" class="btn-accion btn-warn">Rechazar</button>` : ''}
             <button onclick="toggleDestacado('${n.id}',${!n.destacado})" class="btn-accion btn-info">${n.destacado ? 'Quitar dest.' : 'Destacar'}</button>
+            <button onclick="toggleVerificado('${n.id}',${!n.verificado})" class="btn-accion" style="background:${n.verificado ? 'rgba(91,173,214,0.1)' : 'rgba(91,173,214,0.1)'};color:var(--celeste);border:none;">${n.verificado ? '✓ Verificado' : 'Verificar'}</button>
             <button onclick="eliminarNegocio('${n.id}')" class="btn-accion btn-del">Eliminar</button>
           </div>
         </td>
@@ -224,6 +225,11 @@
     `).join('');
   }
 
+  window.toggleVerificado = async (id, val) => {
+    await updateDoc(doc(db, "negocios", id), { verificado: val });
+    mostrarToast(val ? "Negocio verificado ✓" : "Verificación removida", "ok");
+    await cargarNegocios();
+  };
   window.toggleBan = async (id, val) => {
     await updateDoc(doc(db, "usuarios", id), { baneado: val });
     mostrarToast(val ? "Usuario baneado" : "Usuario desbaneado", "ok");
