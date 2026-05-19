@@ -35,12 +35,21 @@
   let negocioActual = null;
   let publicaciones  = [];
 
-  const PROHIBIDAS = ["cigarrillo","cigarro","tabaco","alcohol","cerveza","vino",
-    "fernet","whisky","vodka","droga","cocaina","marihuana","cannabis","paco"];
+  const PROHIBIDAS = [
+    "cigarrillo","cigarro","tabaco","alcohol","cerveza","vino","fernet",
+    "whisky","vodka","droga","cocaina","marihuana","cannabis","paco",
+  ];
+  const PROHIBIDAS_TIPO = [
+    "vendo moto","vendo auto","vendo celular usado","vendo casa","vendo terreno",
+    "vendo departamento","permuto","se alquila","se vende casa","se vende auto",
+    "segunda mano","liquido","remato","venta de moto","venta de auto",
+  ];
 
   function contieneProhibidas(txt) {
     const t = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    return PROHIBIDAS.some(p => t.includes(p));
+    if (PROHIBIDAS.some(p => t.includes(p))) return { bloqueado: true, razon: "contiene palabras prohibidas (alcohol, tabaco, drogas)" };
+    if (PROHIBIDAS_TIPO.some(p => t.includes(p))) return { bloqueado: true, razon: "solo se permiten productos o servicios propios — no compra/venta de usados" };
+    return { bloqueado: false };
   }
 
   // ── Auth guard ──
@@ -199,52 +208,64 @@
     const descripcion = document.getElementById("pubDescripcion").value.trim();
     const precio      = document.getElementById("pubPrecio").value;
     const categoria   = document.getElementById("pubCategoria").value;
-    const imgFile     = document.getElementById("pubImagen").files[0];
+    const imgFiles    = document.getElementById("pubImagen").files;
 
     if (!titulo)    return mostrarToast("Ingresá un título", "error");
-    if (!precio)    return mostrarToast("Ingresá un precio", "error");
+    if (!precio || Number(precio) <= 0) return mostrarToast("Ingresá un precio válido", "error");
     if (!categoria) return mostrarToast("Seleccioná una categoría", "error");
 
-    if (contieneProhibidas(titulo) || contieneProhibidas(descripcion)) {
-      return mostrarToast("El contenido tiene palabras no permitidas", "error");
-    }
+    // Verificar contenido prohibido
+    const chkTitulo = contieneProhibidas(titulo);
+    const chkDesc   = contieneProhibidas(descripcion);
+    if (chkTitulo.bloqueado) return mostrarToast(`No permitido: ${chkTitulo.razon}`, "error");
+    if (chkDesc.bloqueado)   return mostrarToast(`No permitido: ${chkDesc.razon}`, "error");
 
     setBtnGuardar(true);
 
-    let imageUrl = id ? publicaciones.find(x=>x.id===id)?.imageUrl || "" : "";
+    // Subir hasta 3 imágenes a Cloudinary
+    let imagenes = id ? (publicaciones.find(x=>x.id===id)?.imagenes || []) : [];
 
-    if (imgFile) {
-      try {
-        const fd = new FormData();
-        fd.append("file", imgFile);
-        fd.append("upload_preset", CLOUDINARY_PRESET);
-        fd.append("folder", "punto-chaco/publicaciones");
-        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:"POST", body:fd });
-        const data = await res.json();
-        imageUrl   = data.secure_url;
-      } catch {
-        setBtnGuardar(false);
-        return mostrarToast("Error al subir la imagen", "error");
+    if (imgFiles && imgFiles.length > 0) {
+      const limite = Math.min(imgFiles.length, 3);
+      imagenes = [];
+      for (let i = 0; i < limite; i++) {
+        try {
+          const fd = new FormData();
+          fd.append("file", imgFiles[i]);
+          fd.append("upload_preset", CLOUDINARY_PRESET);
+          fd.append("folder", "punto-chaco/publicaciones");
+          setBtnGuardar(true, `Subiendo imagen ${i+1}/${limite}...`);
+          const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:"POST", body:fd });
+          const data = await res.json();
+          if (data.secure_url) imagenes.push(data.secure_url);
+        } catch {
+          setBtnGuardar(false);
+          return mostrarToast("Error al subir imágenes. Intentá de nuevo.", "error");
+        }
       }
     }
 
+    // Aprobación automática — si pasa los filtros se aprueba directo
     const datos = {
       titulo, descripcion, precio: Number(precio), categoria,
-      imageUrl, negocioId: negocioActual?.id || usuarioActual.uid,
+      imagenes,
+      imageUrl: imagenes[0] || "",  // compatibilidad
+      negocioId: negocioActual?.id || usuarioActual.uid,
       propietarioId: usuarioActual.uid,
       localidad: negocioActual?.localidad || "",
       nombreNegocio: negocioActual?.nombre || "",
-      aprobado: false, activo: true,
+      aprobado: true,  // ← aprobación automática al pasar los filtros
+      activo: true,
     };
 
     try {
       if (id) {
         await updateDoc(doc(db, "publicaciones", id), datos);
-        mostrarToast("Publicación actualizada", "ok");
+        mostrarToast("Publicación actualizada y publicada", "ok");
       } else {
         datos.creadoEn = serverTimestamp();
         await addDoc(collection(db, "publicaciones"), datos);
-        mostrarToast("Publicación enviada para revisión", "ok");
+        mostrarToast("¡Publicación publicada exitosamente!", "ok");
       }
       cerrarModalPub();
       await cargarPublicaciones();
@@ -726,11 +747,11 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
       <div class="modal-body">
 
         <div class="grupo">
-          <label>Imagen del producto</label>
+          <label>Imágenes del producto <span style="color:var(--texto-3);font-weight:400;">(hasta 3 fotos)</span></label>
           <label class="upload-area" for="pubImagen">
-            <input type="file" id="pubImagen" accept="image/*" onchange="previewImgPub(this)">
-            <img id="pubImgPreview" alt="preview">
-            <p>Hacé click para subir una imagen</p>
+            <input type="file" id="pubImagen" accept="image/*" multiple onchange="previewImgPub(this)">
+            <div id="pubImgsPreview" style="display:none; display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;"></div>
+            <p>Hacé click para subir hasta 3 imágenes</p>
           </label>
         </div>
 
