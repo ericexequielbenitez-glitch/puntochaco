@@ -12,7 +12,7 @@
   import { getAuth, onAuthStateChanged, signOut }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, collection, query, where,
-           getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp }
+           getDocs, addDoc, updateDoc, deleteDoc, setDoc, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -439,11 +439,108 @@
     document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("activo"));
     document.querySelector(`[data-sec="${id}"]`)?.classList.add("activo");
     if (window.innerWidth < 900) document.getElementById("sidebar").classList.remove("abierto");
+    if (id === 'turnos') cargarConfigTurnos();
   };
 
   window.toggleSidebar = function() {
     document.getElementById("sidebar").classList.toggle("abierto");
   };
+
+  // ── TURNOS CONFIG ──
+  window.toggleAgenda = function(activo) {
+    mostrarToast(activo ? 'Agenda activada' : 'Agenda desactivada', 'ok');
+  };
+
+  window.guardarConfigTurnos = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnGuardarTurnos');
+    btn.disabled = true; btn.textContent = 'Guardando...';
+    try {
+      const diasTurno = [...document.querySelectorAll('.dia-check-turno:checked')].map(d => d.value);
+      const datos = {
+        negocioId:       negocioActual.id,
+        diasDisponibles: diasTurno,
+        horaInicio:      document.getElementById('turnoHoraInicio').value,
+        horaFin:         document.getElementById('turnoHoraFin').value,
+        duracion:        Number(document.getElementById('turnoDuracion').value),
+        maxPorDia:       Number(document.getElementById('turnoMaxDia').value),
+        activo:          document.getElementById('agendaActiva').checked,
+        actualizadoEn:   new Date().toISOString()
+      };
+      await setDoc(doc(db, 'configTurnos', negocioActual.id), datos);
+      await updateDoc(doc(db, 'negocios', negocioActual.id), { tieneTurnos: datos.activo });
+      mostrarToast('Configuración guardada ✓', 'ok');
+    } catch(err) {
+      mostrarToast('Error: ' + err.message, 'error');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg> Guardar configuración';
+  };
+
+  async function cargarConfigTurnos() {
+    if (!negocioActual?.id) return;
+    try {
+      const snap = await getDoc(doc(db, 'configTurnos', negocioActual.id));
+      if (snap.exists()) {
+        const cfg = snap.data();
+        const el = id => document.getElementById(id);
+        if(el('agendaActiva'))    el('agendaActiva').checked = cfg.activo || false;
+        if(el('turnoDuracion'))   el('turnoDuracion').value  = cfg.duracion || 60;
+        if(el('turnoMaxDia'))     el('turnoMaxDia').value    = cfg.maxPorDia || 8;
+        if(el('turnoHoraInicio')) el('turnoHoraInicio').value = cfg.horaInicio || '09:00';
+        if(el('turnoHoraFin'))    el('turnoHoraFin').value   = cfg.horaFin || '18:00';
+        document.querySelectorAll('.dia-check-turno').forEach(cb => {
+          cb.checked = (cfg.diasDisponibles || []).includes(cb.value);
+        });
+      }
+    } catch(e) {}
+    await cargarTurnosRecibidos();
+  }
+
+  async function cargarTurnosRecibidos() {
+    if (!negocioActual?.id) return;
+    const lista = document.getElementById('listaTurnos');
+    if (!lista) return;
+    try {
+      const q = query(collection(db, 'turnos'), where('negocioId', '==', negocioActual.id));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        lista.innerHTML = `<div style="text-align:center;padding:32px;color:var(--texto-3);font-size:14px;">
+          <p>Todavía no recibiste ningún turno.</p></div>`;
+        return;
+      }
+      const turnos = snap.docs.map(d => ({ id:d.id, ...d.data() }))
+        .sort((a,b) => (a.fecha+a.horario).localeCompare(b.fecha+b.horario));
+      lista.innerHTML = turnos.map(t => {
+        const f = new Date(t.fecha + 'T12:00:00');
+        const fechaLinda = f.toLocaleDateString('es-AR', { weekday:'short', day:'numeric', month:'short' });
+        const estados = { confirmado:'var(--verde)', cancelado:'var(--error)', pendiente:'#FF9500' };
+        const bgEstados = { confirmado:'var(--verde-suave)', cancelado:'rgba(255,59,59,0.1)', pendiente:'#FFF3E0' };
+        const est = t.estado || 'pendiente';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1.5px solid var(--borde);border-radius:var(--r-md);margin-bottom:10px;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="text-align:center;background:var(--celeste-suave);border-radius:var(--r-sm);padding:8px 12px;min-width:60px;">
+              <div style="font-size:18px;font-weight:800;color:var(--celeste);font-family:'Playfair Display',serif;">${t.horario}</div>
+              <div style="font-size:11px;color:var(--texto-3);">${fechaLinda}</div>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:700;">${t.clienteNombre}</div>
+              <div style="font-size:12px;color:var(--texto-3);">${t.clienteTel}</div>
+              ${t.clienteNota ? `<div style="font-size:12px;color:var(--texto-2);font-style:italic;margin-top:2px;">"${t.clienteNota}"</div>` : ''}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;background:${bgEstados[est]||bgEstados.pendiente};color:${estados[est]||estados.pendiente};">${est}</span>
+            ${t.clienteTel ? `<a href="https://wa.me/${t.clienteTel.replace(/\D/g,'')}" target="_blank" style="width:32px;height:32px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+              <svg viewBox="0 0 24 24" fill="white" width="15" height="15"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            </a>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      if(lista) lista.innerHTML = `<div style="padding:16px;color:var(--error);font-size:13px;">Error: ${e.message}</div>`;
+    }
+  }
 </script>
 
 <style>
@@ -972,6 +1069,10 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Mi negocio
         </div>
+        <div class="nav-item" data-sec="turnos" onclick="mostrarSeccion('turnos')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Mis turnos
+        </div>
 
         <div class="nav-grupo-titulo" style="margin-top:12px;">Cuenta</div>
         <div class="nav-item" onclick="window.location.href='index.html'">
@@ -1263,13 +1364,95 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
           </div>
         </div>
 
-      </div>
-    </div>
-  </div>
-</div>
+        <!-- SECCIÓN TURNOS -->
+        <div class="seccion" id="sec-turnos">
+          <div class="sec-titulo-wrap">
+            <div class="sec-titulo">Configuración de turnos</div>
+          </div>
 
-<script>
-  // Sincronizar datos del perfil en la sección "Mi negocio"
+          <!-- CONFIG AGENDA -->
+          <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;box-shadow:0 2px 12px rgba(42,172,226,0.06);">
+            <div style="padding:16px 24px;border-bottom:1.5px solid var(--borde);background:var(--fondo);display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <span style="font-size:14px;font-weight:700;color:var(--texto);">Agenda online</span>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="agendaActiva" onchange="toggleAgenda(this.checked)"
+                  style="width:18px;height:18px;accent-color:var(--celeste);">
+                <span style="font-size:13px;font-weight:600;color:var(--texto-2);">Activar agenda</span>
+              </label>
+            </div>
+            <form id="formTurnos" onsubmit="guardarConfigTurnos(event)" style="padding:24px;">
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                <div class="grupo">
+                  <label>Duración del turno (minutos)</label>
+                  <select id="turnoDuracion">
+                    <option value="30">30 minutos</option>
+                    <option value="45">45 minutos</option>
+                    <option value="60" selected>1 hora</option>
+                    <option value="90">1 hora 30 min</option>
+                    <option value="120">2 horas</option>
+                  </select>
+                </div>
+                <div class="grupo">
+                  <label>Máximo de turnos por día</label>
+                  <select id="turnoMaxDia">
+                    <option value="2">2 turnos</option>
+                    <option value="4">4 turnos</option>
+                    <option value="6">6 turnos</option>
+                    <option value="8" selected>8 turnos</option>
+                    <option value="10">10 turnos</option>
+                    <option value="12">12 turnos</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grupo">
+                <label>Días disponibles para turnos</label>
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px;">
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Lun"><div class="dia-inner">Lun</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Mar"><div class="dia-inner">Mar</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Mié"><div class="dia-inner">Mié</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Jue"><div class="dia-inner">Jue</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Vie" checked><div class="dia-inner">Vie</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Sáb"><div class="dia-inner">Sáb</div></label>
+                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Dom"><div class="dia-inner">Dom</div></label>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="grupo">
+                  <label>Hora de inicio</label>
+                  <input type="time" id="turnoHoraInicio" value="09:00" style="padding-left:12px;">
+                </div>
+                <div class="grupo">
+                  <label>Hora de fin</label>
+                  <input type="time" id="turnoHoraFin" value="18:00" style="padding-left:12px;">
+                </div>
+              </div>
+
+              <div style="display:flex;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--borde);margin-top:4px;">
+                <button type="submit" class="btn btn-celeste" id="btnGuardarTurnos" style="height:44px;padding:0 28px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+                  Guardar configuración
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- TURNOS RECIBIDOS -->
+          <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 2px 12px rgba(42,172,226,0.06);">
+            <div style="padding:16px 24px;border-bottom:1.5px solid var(--borde);background:var(--fondo);display:flex;align-items:center;gap:10px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <span style="font-size:14px;font-weight:700;color:var(--texto);">Turnos recibidos</span>
+            </div>
+            <div id="listaTurnos" style="padding:16px;">
+              <div style="text-align:center;padding:32px;color:var(--texto-3);font-size:14px;">Cargando turnos...</div>
+            </div>
+          </div>
+        </div>
   document.addEventListener('DOMContentLoaded', () => {
     const observer = new MutationObserver(() => {
       if (window.negocioActual) rellenarFormEdicion(window.negocioActual);
