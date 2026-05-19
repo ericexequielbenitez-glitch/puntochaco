@@ -268,14 +268,14 @@ nav{position:sticky;top:0;z-index:50;height:64px;background:rgba(255,255,255,0.9
   </div>
 
   <div class="sidebar-info">
-    <div class="turno-card">
+    <div class="turno-card" id="turnoCard" style="display:none;">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
         <div class="turno-dot"></div>
         <span style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">Turnos disponibles</span>
       </div>
-      <h3>Reservá tu pedido</h3>
-      <p>Coordiná el retiro o entrega directamente con el vendedor.</p>
-      <button class="btn-turno">
+      <h3>Reservá tu turno</h3>
+      <p>Elegí fecha y horario directamente online.</p>
+      <button class="btn-turno" id="btnVerDisponibilidad">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         Ver disponibilidad
       </button>
@@ -491,6 +491,20 @@ nav{position:sticky;top:0;z-index:50;height:64px;background:rgba(255,255,255,0.9
     // Botón seguir — mostrar si hay usuario logueado y no es el dueño
     window._negocioId = n.id || snap?.docs[0]?.id;
     window._negocioData = n;
+
+    // Turnos — solo mostrar si el negocio tiene turnos activos Y es de servicios
+    const CATEGORIAS_SERVICIOS = ['Barbería','Manicuría','Cosmetología','Tratamientos de piel',
+      'Educación','Animales','Deportes','Entrenamiento personal','Reparaciones',
+      'Fotografía','Diseño','Marketing','Tecnología','Otros servicios'];
+    const esServicio = CATEGORIAS_SERVICIOS.includes(n.categoria);
+    const turnoCard = document.getElementById('turnoCard');
+    const btnTurno  = document.getElementById('btnVerDisponibilidad');
+    if (turnoCard && (n.tieneTurnos || esServicio)) {
+      turnoCard.style.display = 'block';
+      if (btnTurno && n.slug) {
+        btnTurno.onclick = () => window.location.href = `turnos.html?slug=${n.slug}`;
+      }
+    }
 
     renderProductos(productos);
   }
