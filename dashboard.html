@@ -76,30 +76,29 @@
   });
 
   function renderPerfil() {
-    document.getElementById("nombreUsuario").textContent =
-      `${usuarioActual.nombre} ${usuarioActual.apellido}`;
-    document.getElementById("nombreNegocio").textContent =
-      negocioActual?.nombre || "Mi negocio";
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val || ""; };
+
+    set("nombreUsuario", `${usuarioActual.nombre} ${usuarioActual.apellido}`);
+    set("nombreNegocio", negocioActual?.nombre || "Mi negocio");
 
     const estadoEl = document.getElementById("estadoNegocio");
-    if (negocioActual?.aprobado) {
-      estadoEl.textContent = "Aprobado";
-      estadoEl.className = "estado-badge aprobado";
-    } else {
-      estadoEl.textContent = "Pendiente de aprobación";
-      estadoEl.className = "estado-badge pendiente";
+    if (estadoEl) {
+      if (negocioActual?.aprobado) {
+        estadoEl.textContent = "Aprobado";
+        estadoEl.className = "estado-badge aprobado";
+      } else {
+        estadoEl.textContent = "Pendiente";
+        estadoEl.className = "estado-badge pendiente";
+      }
     }
 
-    if (negocioActual?.logoUrl) {
-      document.getElementById("logoNegocio").src = negocioActual.logoUrl;
-      document.getElementById("logoNegocio").style.display = "block";
-      document.getElementById("logoPlaceholder").style.display = "none";
-    }
+    // Stats resumen
+    set("statLocalidad", negocioActual?.localidad);
+    set("statCategoria", negocioActual?.categoria);
+    set("statWhatsapp",  negocioActual?.whatsapp);
 
-    // Stats
-    document.getElementById("statLocalidad").textContent = negocioActual?.localidad || "-";
-    document.getElementById("statCategoria").textContent = negocioActual?.categoria || "-";
-    document.getElementById("statWhatsapp").textContent  = negocioActual?.whatsapp  || "-";
+    // Rellenar formulario de edición si ya está en DOM
+    if (negocioActual) rellenarFormEdicion(negocioActual);
   }
 
   async function cargarPublicaciones() {
@@ -173,13 +172,13 @@
         document.getElementById("pubPrecio").value      = p.precio || "";
         document.getElementById("pubCategoria").value   = p.categoria || "";
         if (p.imageUrl) {
-          document.getElementById("pubImgPreview").src = p.imageUrl;
-          document.getElementById("pubImgPreview").style.display = "block";
+          const _prev = document.getElementById("pubImgsPreview");
+          if(_prev) { _prev.style.display="flex"; _prev.innerHTML=`<img src="${p.imageUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">`; }
         }
       }
     } else {
       document.getElementById("formPub").reset();
-      document.getElementById("pubImgPreview").style.display = "none";
+      const _prev2 = document.getElementById("pubImgsPreview"); if(_prev2) { _prev2.style.display="none"; _prev2.innerHTML=""; }
     }
   };
 
@@ -194,9 +193,7 @@
     if (!f) return;
     const r = new FileReader();
     r.onload = e => {
-      const img = document.getElementById("pubImgPreview");
-      img.src = e.target.result;
-      img.style.display = "block";
+      // preview handled by previewImgPub function
     };
     r.readAsDataURL(f);
   };
