@@ -242,9 +242,10 @@ nav {
   min-height: calc(100vh - 64px);
 }
 
-/* PANEL IZQUIERDO — decorativo */
+/* PANEL IZQUIERDO — limpio, blanco con detalles de marca */
 .panel-izq {
-  background: linear-gradient(160deg, var(--celeste) 0%, #1E7FB5 50%, #27865A 100%);
+  background: var(--fondo);
+  border-right: 1.5px solid var(--borde);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   padding: 48px;
@@ -255,17 +256,18 @@ nav {
   content: '';
   position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    linear-gradient(var(--borde) 1px, transparent 1px),
+    linear-gradient(90deg, var(--borde) 1px, transparent 1px);
   background-size: 48px 48px;
+  opacity: 0.5;
 }
 
 .panel-izq::after {
   content: '';
   position: absolute;
-  bottom: -80px; left: -80px;
-  width: 360px; height: 360px;
-  background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 70%);
+  top: -60px; right: -60px;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(91,173,214,0.12) 0%, transparent 70%);
 }
 
 .panel-deco { position: relative; z-index: 1; text-align: center; }
@@ -286,34 +288,35 @@ nav {
 .panel-deco h2 {
   font-family: 'Playfair Display', serif;
   font-size: 32px; font-weight: 800;
-  color: var(--blanco); margin-bottom: 12px;
+  color: var(--texto); margin-bottom: 12px;
   line-height: 1.2;
 }
 .panel-deco p {
-  font-size: 16px; color: rgba(255,255,255,0.7);
+  font-size: 16px; color: var(--texto-2);
   line-height: 1.65; max-width: 340px; margin: 0 auto;
 }
 
 .panel-stats {
   display: flex; gap: 0;
   margin-top: 48px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--blanco);
+  border: 1.5px solid var(--borde);
   border-radius: var(--r-md);
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(42,172,226,0.08);
 }
 .panel-stat {
   flex: 1; padding: 16px 20px; text-align: center;
-  border-right: 1px solid rgba(255,255,255,0.1);
+  border-right: 1.5px solid var(--borde);
 }
 .panel-stat:last-child { border-right: none; }
 .panel-stat-num {
   font-family: 'Playfair Display', serif;
   font-size: 24px; font-weight: 700;
-  color: var(--blanco);
+  color: var(--celeste);
 }
 .panel-stat-lbl {
-  font-size: 11px; color: rgba(255,255,255,0.55);
+  font-size: 11px; color: var(--texto-3);
   margin-top: 2px; font-weight: 500;
 }
 
@@ -534,7 +537,7 @@ input:focus {
 <nav>
   <a href="index.html" class="nav-logo">
     <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png"
-         alt="PuntoChaco" style="height:40px; width:auto; display:block;">
+         alt="PuntoChaco" style="height:52px; width:auto; display:block;">
   </a>
   <a href="registro.html" class="nav-link">¿No tenés cuenta? <strong>Registrate gratis</strong></a>
 </nav>
@@ -545,9 +548,9 @@ input:focus {
   <!-- PANEL IZQUIERDO -->
   <div class="panel-izq">
     <div class="panel-deco">
-      <div class="panel-logo-grande" style="background:transparent; box-shadow:none; overflow:visible;">
+      <div class="panel-logo-grande" style="background:transparent;box-shadow:none;overflow:visible;width:180px;height:auto;">
         <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png"
-             alt="PuntoChaco" style="width:100%; height:100%; object-fit:contain;">
+             alt="PuntoChaco" style="width:100%;height:auto;object-fit:contain;">
       </div>
       <h2>La plataforma de emprendedores del Chaco</h2>
       <p>Conectamos compradores y vendedores de toda la provincia. Gratis, simple y moderno.</p>
