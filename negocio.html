@@ -407,17 +407,40 @@ nav{position:sticky;top:0;z-index:50;height:64px;background:rgba(255,255,255,0.9
   async function cargar() {
     if (!slug) { mostrarSinNegocio(); return; }
     try {
+      // Buscar negocio por slug
       const q    = query(collection(db, "negocios"), where("slug", "==", slug));
       const snap = await getDocs(q);
       if (snap.empty) { mostrarSinNegocio(); return; }
+
       const negocio = { id: snap.docs[0].id, ...snap.docs[0].data() };
-      const pubQ  = query(collection(db, "publicaciones"),
-                          where("negocioId", "==", negocio.id),
-                          where("aprobado", "==", true));
-      const pubs  = await getDocs(pubQ);
-      const productos = pubs.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Buscar publicaciones — primero por negocioId, luego por propietarioId como fallback
+      // Evitamos query compuesta (requiere índice en Firestore)
+      let productos = [];
+      try {
+        const pubQ1 = query(collection(db, "publicaciones"),
+                            where("negocioId", "==", negocio.id));
+        const pubs1 = await getDocs(pubQ1);
+        productos = pubs1.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(p => p.aprobado !== false); // mostrar todas salvo las explícitamente rechazadas
+      } catch(e2) {
+        // Si falla, intentar por propietarioId
+        try {
+          const pubQ2 = query(collection(db, "publicaciones"),
+                              where("propietarioId", "==", negocio.id));
+          const pubs2 = await getDocs(pubQ2);
+          productos = pubs2.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .filter(p => p.aprobado !== false);
+        } catch(e3) { productos = []; }
+      }
+
       renderNegocio(negocio, productos);
-    } catch(e) { mostrarSinNegocio(); }
+    } catch(e) {
+      console.error("Error cargando negocio:", e);
+      mostrarSinNegocio();
+    }
   }
 
   function renderNegocio(n, productos) {
