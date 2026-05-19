@@ -65,9 +65,22 @@
 
     usuarioActual = { uid: user.uid, ...datos };
 
-    // Cargar negocio
-    const negSnap = await getDoc(doc(db, "negocios", user.uid));
-    if (negSnap.exists()) negocioActual = { id: negSnap.id, ...negSnap.data() };
+    // Cargar negocio — buscar por propietarioId (compatible con todos los casos)
+    try {
+      // Primero intentar por UID como ID de documento (registro nuevo)
+      const negSnapDirecto = await getDoc(doc(db, "negocios", user.uid));
+      if (negSnapDirecto.exists()) {
+        negocioActual = { id: negSnapDirecto.id, ...negSnapDirecto.data() };
+      } else {
+        // Si no, buscar por propietarioId (negocios creados con otro ID)
+        const negQ = query(collection(db, "negocios"),
+                           where("propietarioId", "==", user.uid));
+        const negSnaps = await getDocs(negQ);
+        if (!negSnaps.empty) {
+          negocioActual = { id: negSnaps.docs[0].id, ...negSnaps.docs[0].data() };
+        }
+      }
+    } catch(e) { console.error("Error cargando negocio:", e); }
 
     renderPerfil();
     await cargarPublicaciones();
@@ -363,7 +376,7 @@
         actualizadoEn: new Date().toISOString()
       };
 
-      await updateDoc(doc(db, 'negocios', usuarioActual.uid), datos);
+      await updateDoc(doc(db, 'negocios', negocioActual.id), datos);
       negocioActual = { ...negocioActual, ...datos };
       window.negocioActual = negocioActual;
 
