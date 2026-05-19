@@ -975,7 +975,7 @@ footer {
     <li><a href="#como">¿Cómo funciona?</a></li>
   </ul>
 
-  <div class="nav-btns">
+  <div class="nav-btns" id="navBtns">
     <a href="login.html" class="btn btn-borde">Iniciar sesión</a>
     <a href="registro.html" class="btn btn-celeste">Publicar negocio</a>
     <button class="hamburger" onclick="toggleMenu()" aria-label="Menú">
@@ -983,6 +983,41 @@ footer {
     </button>
   </div>
 </nav>
+
+<script type="module">
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  const app  = initializeApp({
+    apiKey:"AIzaSyCibGsSHDHn6c8VXLzUlqeKXpaxibfpVuc",
+    authDomain:"chacoemprende-df731.firebaseapp.com",
+    projectId:"chacoemprende-df731",
+    storageBucket:"chacoemprende-df731.firebasestorage.app",
+    messagingSenderId:"871612466602",
+    appId:"1:871612466602:web:fe62a4f01c38d5b2c417d3"
+  });
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+    const snap = await getDoc(doc(db, "usuarios", user.uid));
+    if (!snap.exists()) return;
+    const d = snap.data();
+    const destino = d.rol === "admin" ? "admin.html" : "dashboard.html";
+    document.getElementById("navBtns").innerHTML = `
+      <a href="${destino}" class="btn btn-borde" style="gap:7px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Mi panel
+      </a>
+      <span style="font-size:14px;color:var(--texto-2);font-weight:600;display:none;" class="nav-saludo">Hola, ${d.nombre}</span>
+      <button class="hamburger" onclick="toggleMenu()" aria-label="Menú" style="background:none;border:none;cursor:pointer;padding:4px;display:none;flex-direction:column;gap:5px;">
+        <span style="display:block;width:22px;height:2px;background:var(--texto);border-radius:2px;"></span>
+        <span style="display:block;width:22px;height:2px;background:var(--texto);border-radius:2px;"></span>
+        <span style="display:block;width:22px;height:2px;background:var(--texto);border-radius:2px;"></span>
+      </button>
+    `;
+  });
+</script>
 
 <!-- MENU MOBILE -->
 <div class="menu-mobile" id="menuMobile">
