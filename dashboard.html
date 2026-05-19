@@ -6,975 +6,885 @@
 <title>Mi Panel — PuntoChaco</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
-
-<script type="module">
-  import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, collection, query, where,
-           getDocs, addDoc, updateDoc, deleteDoc, setDoc, serverTimestamp }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCibGsSHDHn6c8VXLzUlqeKXpaxibfpVuc",
-    authDomain: "chacoemprende-df731.firebaseapp.com",
-    projectId: "chacoemprende-df731",
-    storageBucket: "chacoemprende-df731.firebasestorage.app",
-    messagingSenderId: "871612466602",
-    appId: "1:871612466602:web:fe62a4f01c38d5b2c417d3"
-  };
-
-  const CLOUDINARY_CLOUD  = "dhrhg6ng6";
-  const CLOUDINARY_PRESET = "punto_chaco_uploads";
-
-  const app  = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db   = getFirestore(app);
-
-  let usuarioActual = null;
-  let negocioActual = null;
-  let publicaciones  = [];
-
-  const PROHIBIDAS = [
-    "cigarrillo","cigarro","tabaco","alcohol","cerveza","vino","fernet",
-    "whisky","vodka","droga","cocaina","marihuana","cannabis","paco",
-  ];
-  const PROHIBIDAS_TIPO = [
-    "vendo moto","vendo auto","vendo celular usado","vendo casa","vendo terreno",
-    "vendo departamento","permuto","se alquila","se vende casa","se vende auto",
-    "segunda mano","liquido","remato","venta de moto","venta de auto",
-  ];
-
-  function contieneProhibidas(txt) {
-    const t = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    if (PROHIBIDAS.some(p => t.includes(p))) return { bloqueado: true, razon: "contiene palabras prohibidas (alcohol, tabaco, drogas)" };
-    if (PROHIBIDAS_TIPO.some(p => t.includes(p))) return { bloqueado: true, razon: "solo se permiten productos o servicios propios — no compra/venta de usados" };
-    return { bloqueado: false };
-  }
-
-  // ── Auth guard ──
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) { window.location.href = "login.html"; return; }
-
-    const snap = await getDoc(doc(db, "usuarios", user.uid));
-    if (!snap.exists()) { window.location.href = "login.html"; return; }
-
-    const datos = snap.data();
-    if (datos.rol !== "vendedor") { window.location.href = "index.html"; return; }
-    if (datos.baneado) { await signOut(auth); window.location.href = "login.html"; return; }
-
-    usuarioActual = { uid: user.uid, ...datos };
-
-    // Cargar negocio — buscar por propietarioId (compatible con todos los casos)
-    try {
-      // Primero intentar por UID como ID de documento (registro nuevo)
-      const negSnapDirecto = await getDoc(doc(db, "negocios", user.uid));
-      if (negSnapDirecto.exists()) {
-        negocioActual = { id: negSnapDirecto.id, ...negSnapDirecto.data() };
-      } else {
-        // Si no, buscar por propietarioId (negocios creados con otro ID)
-        const negQ = query(collection(db, "negocios"),
-                           where("propietarioId", "==", user.uid));
-        const negSnaps = await getDocs(negQ);
-        if (!negSnaps.empty) {
-          negocioActual = { id: negSnaps.docs[0].id, ...negSnaps.docs[0].data() };
-        }
-      }
-    } catch(e) { console.error("Error cargando negocio:", e); }
-
-    renderPerfil();
-    await cargarPublicaciones();
-
-    // Mostrar secciones según tipo de negocio
-    const SERVICIOS = ['Barbería','Manicuría','Cosmetología','Tratamientos de piel',
-      'Educación','Animales','Deportes','Entrenamiento personal','Reparaciones',
-      'Fotografía','Diseño','Marketing','Tecnología','Otros servicios'];
-    const esServicio = SERVICIOS.includes(negocioActual?.categoria);
-
-    // Nav item turnos — solo servicios
-    const navTurnos = document.querySelector('[data-sec="turnos"]');
-    if (navTurnos) navTurnos.style.display = esServicio ? 'flex' : 'none';
-
-    // Nav item stock — solo productos
-    const navStock = document.querySelector('[data-sec="stock"]');
-    if (navStock) navStock.style.display = !esServicio ? 'flex' : 'none';
-
-    document.getElementById("cargando").style.display = "none";
-    document.getElementById("appContent").style.display = "flex";
-  });
-
-  function renderPerfil() {
-    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val || ""; };
-
-    set("nombreUsuario", `${usuarioActual.nombre} ${usuarioActual.apellido}`);
-    set("nombreNegocio", negocioActual?.nombre || "Mi negocio");
-
-    const estadoEl = document.getElementById("estadoNegocio");
-    if (estadoEl) {
-      // Firestore puede guardar como booleano true o string "true"
-      const aprobado = negocioActual?.aprobado === true || negocioActual?.aprobado === "true";
-      if (aprobado) {
-        estadoEl.textContent = "Aprobado";
-        estadoEl.className = "estado-badge aprobado";
-      } else {
-        estadoEl.textContent = "Pendiente";
-        estadoEl.className = "estado-badge pendiente";
-      }
-    }
-
-    // Stats resumen
-    set("statLocalidad", negocioActual?.localidad);
-    set("statCategoria", negocioActual?.categoria);
-    set("statWhatsapp",  negocioActual?.whatsapp);
-
-    // Rellenar formulario de edición si ya está en DOM
-    if (negocioActual) rellenarFormEdicion(negocioActual);
-  }
-
-  async function cargarPublicaciones() {
-    // Buscar por propietarioId (forma nueva) Y negocioId (forma alternativa)
-    let todasPubs = [];
-    try {
-      const q1 = query(collection(db, "publicaciones"),
-                       where("propietarioId", "==", usuarioActual.uid));
-      const snap1 = await getDocs(q1);
-      todasPubs = snap1.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch(e) {}
-
-    // Si no encontró nada, intentar por negocioId
-    if (todasPubs.length === 0 && negocioActual?.id) {
-      try {
-        const q2 = query(collection(db, "publicaciones"),
-                         where("negocioId", "==", negocioActual.id));
-        const snap2 = await getDocs(q2);
-        todasPubs = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
-      } catch(e) {}
-    }
-
-    publicaciones = todasPubs;
-    window.publicaciones = publicaciones;
-    renderPublicaciones();
-
-    const count = publicaciones.length;
-    const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-    setTxt("contadorPubs", count);
-    setTxt("limitePubs",   `${count}/10`);
-    setTxt("limitePubs2",  `${count}/10`);
-    setTxt("dashPubs",     count);
-
-    const pct = (count / 10) * 100;
-    ["barraLimite","barraLimite2"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.style.width = pct + "%";
-        el.style.background = pct >= 100 ? "var(--error)" : pct >= 70 ? "#FF9500" : "var(--verde)";
-      }
-    });
-  }
-
-  function renderPublicaciones() {
-    const grid = document.getElementById("gridPublicaciones");
-    const empty = document.getElementById("sinPublicaciones");
-
-    if (publicaciones.length === 0) {
-      grid.style.display = "none";
-      empty.style.display = "flex";
-      return;
-    }
-    grid.style.display = "grid";
-    empty.style.display = "none";
-
-    grid.innerHTML = publicaciones.map(p => `
-      <div class="pub-card ${!p.aprobado ? 'pendiente-card' : ''}">
-        <div class="pub-img" style="${p.imageUrl ? `background-image:url('${p.imageUrl}')` : 'background:var(--fondo-2)'}">
-          ${!p.imageUrl ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="color:var(--texto-3)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>` : ''}
-          <div class="pub-estado-badge ${p.aprobado ? 'ap' : 'pe'}">
-            ${p.aprobado ? 'Aprobada' : 'Pendiente'}
-          </div>
-        </div>
-        <div class="pub-body">
-          <div class="pub-cat">${p.categoria || ''}</div>
-          <div class="pub-titulo">${p.titulo}</div>
-          <div class="pub-precio">$${Number(p.precio).toLocaleString('es-AR')}</div>
-          <div class="pub-acciones">
-            <button onclick="abrirEditarPub('${p.id}')" class="btn-pub-edit">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Editar
-            </button>
-            <button onclick="eliminarPub('${p.id}')" class="btn-pub-del">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-              Eliminar
-            </button>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  // ── Modal nueva publicación ──
-  window.abrirModalPub = function(id = null) {
-    if (publicaciones.length >= 10 && !id) {
-      mostrarToast("Alcanzaste el límite de 10 publicaciones gratuitas.", "error");
-      return;
-    }
-    document.getElementById("modalPub").style.display = "flex";
-    document.getElementById("modalPubTitulo").textContent = id ? "Editar publicación" : "Nueva publicación";
-    document.getElementById("pubId").value = id || "";
-
-    if (id) {
-      const p = publicaciones.find(x => x.id === id);
-      if (p) {
-        document.getElementById("pubTitulo").value      = p.titulo || "";
-        document.getElementById("pubDescripcion").value = p.descripcion || "";
-        document.getElementById("pubPrecio").value      = p.precio || "";
-        document.getElementById("pubCategoria").value   = p.categoria || "";
-        if (p.imageUrl) {
-          const _prev = document.getElementById("pubImgsPreview");
-          if(_prev) { _prev.style.display="flex"; _prev.innerHTML=`<img src="${p.imageUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">`; }
-        }
-      }
-    } else {
-      document.getElementById("formPub").reset();
-      const _prev2 = document.getElementById("pubImgsPreview"); if(_prev2) { _prev2.style.display="none"; _prev2.innerHTML=""; }
-    }
-  };
-
-  window.abrirEditarPub = function(id) { abrirModalPub(id); };
-
-  window.cerrarModalPub = function() {
-    document.getElementById("modalPub").style.display = "none";
-  };
-
-  window.previewImgPub = function(input) {
-    const f = input.files[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = e => {
-      // preview handled by previewImgPub function
-    };
-    r.readAsDataURL(f);
-  };
-
-  window.guardarPublicacion = async function(e) {
-    e.preventDefault();
-    const id          = document.getElementById("pubId").value;
-    const titulo      = document.getElementById("pubTitulo").value.trim();
-    const descripcion = document.getElementById("pubDescripcion").value.trim();
-    const precio      = document.getElementById("pubPrecio").value;
-    const categoria   = document.getElementById("pubCategoria").value;
-    const imgFiles    = document.getElementById("pubImagen").files;
-
-    if (!titulo)    return mostrarToast("Ingresá un título", "error");
-    if (!precio || Number(precio) <= 0) return mostrarToast("Ingresá un precio válido", "error");
-    if (!categoria) return mostrarToast("Seleccioná una categoría", "error");
-
-    // Verificar contenido prohibido
-    const chkTitulo = contieneProhibidas(titulo);
-    const chkDesc   = contieneProhibidas(descripcion);
-    if (chkTitulo.bloqueado) return mostrarToast(`No permitido: ${chkTitulo.razon}`, "error");
-    if (chkDesc.bloqueado)   return mostrarToast(`No permitido: ${chkDesc.razon}`, "error");
-
-    setBtnGuardar(true);
-
-    // Subir hasta 3 imágenes a Cloudinary
-    let imagenes = id ? (publicaciones.find(x=>x.id===id)?.imagenes || []) : [];
-
-    if (imgFiles && imgFiles.length > 0) {
-      const limite = Math.min(imgFiles.length, 3);
-      imagenes = [];
-      for (let i = 0; i < limite; i++) {
-        try {
-          const fd = new FormData();
-          fd.append("file", imgFiles[i]);
-          fd.append("upload_preset", CLOUDINARY_PRESET);
-          fd.append("folder", "punto-chaco/publicaciones");
-          setBtnGuardar(true, `Subiendo imagen ${i+1}/${limite}...`);
-          const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:"POST", body:fd });
-          const data = await res.json();
-          if (data.secure_url) imagenes.push(data.secure_url);
-        } catch {
-          setBtnGuardar(false);
-          return mostrarToast("Error al subir imágenes. Intentá de nuevo.", "error");
-        }
-      }
-    }
-
-    // Aprobación automática — si pasa los filtros se aprueba directo
-    const datos = {
-      titulo, descripcion, precio: Number(precio), categoria,
-      imagenes,
-      imageUrl: imagenes[0] || "",  // compatibilidad
-      negocioId: negocioActual?.id || usuarioActual.uid,
-      propietarioId: usuarioActual.uid,
-      localidad: negocioActual?.localidad || "",
-      nombreNegocio: negocioActual?.nombre || "",
-      aprobado: true,  // ← aprobación automática al pasar los filtros
-      activo: true,
-    };
-
-    try {
-      if (id) {
-        await updateDoc(doc(db, "publicaciones", id), datos);
-        mostrarToast("Publicación actualizada y publicada", "ok");
-      } else {
-        datos.creadoEn = serverTimestamp();
-        await addDoc(collection(db, "publicaciones"), datos);
-        mostrarToast("¡Publicación publicada exitosamente!", "ok");
-      }
-      cerrarModalPub();
-      await cargarPublicaciones();
-    } catch {
-      mostrarToast("Error al guardar. Intentá de nuevo.", "error");
-    }
-    setBtnGuardar(false);
-  };
-
-  window.eliminarPub = async function(id) {
-    if (!confirm("¿Seguro que querés eliminar esta publicación?")) return;
-    await deleteDoc(doc(db, "publicaciones", id));
-    mostrarToast("Publicación eliminada", "ok");
-    await cargarPublicaciones();
-  };
-
-  window.previewEditLogo = function(input) {
-    const f = input.files[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = e => {
-      const prev = document.getElementById('editLogoPreview');
-      const wrap = document.getElementById('editLogoPreviewWrap');
-      const txt  = document.getElementById('editLogoTexto');
-      if(prev) { prev.src = e.target.result; }
-      if(wrap) wrap.style.display = 'block';
-      if(txt)  txt.textContent = 'Logo seleccionado ✓';
-    };
-    r.readAsDataURL(f);
-  };
-
-  window.guardarDatosNegocio = async function(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btnGuardarNegocio');
-    const btnTextoOriginal = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg> Guardar cambios';
-
-    const resetBtn = () => {
-      btn.disabled = false;
-      btn.innerHTML = btnTextoOriginal;
-    };
-
-    btn.disabled = true;
-    btn.textContent = 'Guardando...';
-
-    try {
-      const nombre      = document.getElementById('editNombre').value.trim();
-      const localidad   = document.getElementById('editLocalidad').value;
-      const whatsapp    = document.getElementById('editWhatsapp').value.trim();
-      const instagram   = document.getElementById('editInstagram').value.trim();
-      const direccion   = document.getElementById('editDireccion').value.trim();
-      const descripcion = document.getElementById('editDescripcion').value.trim();
-      const apertura    = document.getElementById('editApertura').value;
-      const cierre      = document.getElementById('editCierre').value;
-      const dias = [...document.querySelectorAll('.dia-check-edit:checked')].map(d => d.value);
-
-      let logoUrl = negocioActual?.logoUrl || '';
-      const logoInput = document.getElementById('editLogo');
-      const logoFile  = logoInput && logoInput.files && logoInput.files[0];
-
-      if (logoFile) {
-        btn.textContent = 'Subiendo logo...';
-        try {
-          const fd = new FormData();
-          fd.append('file', logoFile);
-          fd.append('upload_preset', CLOUDINARY_PRESET);
-          fd.append('folder', 'punto-chaco/logos');
-          const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-            method: 'POST', body: fd
-          });
-          const data = await res.json();
-          if (data.secure_url) logoUrl = data.secure_url;
-          else mostrarToast('No se pudo subir el logo, se guardó el resto igual.', 'error');
-        } catch(logoErr) {
-          mostrarToast('Error subiendo logo, se guardó el resto igual.', 'error');
-        }
-      }
-
-      btn.textContent = 'Guardando...';
-
-      const slug = (nombre || 'negocio').toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-        .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-
-      const datos = {
-        nombre, localidad, whatsapp, instagram, direccion, descripcion, logoUrl, slug,
-        horarios: { dias, apertura, cierre },
-        actualizadoEn: new Date().toISOString()
-      };
-
-      await updateDoc(doc(db, 'negocios', negocioActual.id), datos);
-      negocioActual = { ...negocioActual, ...datos };
-      window.negocioActual = negocioActual;
-
-      // Actualizar topbar
-      const topbarNombre = document.getElementById('nombreNegocio');
-      if(topbarNombre) topbarNombre.textContent = nombre || 'Mi negocio';
-
-      // Actualizar avatar si hay logo
-      if (logoUrl) {
-        const wrap  = document.getElementById('dashAvatarWrap');
-        const letra = document.getElementById('dashAvatarLetra');
-        if(wrap)  wrap.style.backgroundImage = `url('${logoUrl}')`;
-        if(letra) letra.style.display = 'none';
-      }
-
-      mostrarToast('¡Datos guardados correctamente!', 'ok');
-    } catch(err) {
-      console.error('Error guardando:', err);
-      mostrarToast('Error al guardar: ' + (err.message || 'Intentá de nuevo.'), 'error');
-    }
-
-    resetBtn();
-  };
-
-  function setBtnGuardar(cargando) {
-    const btn = document.getElementById("btnGuardarPub");
-    btn.disabled = cargando;
-    btn.textContent = cargando ? "Guardando..." : "Guardar publicación";
-  }
-
-  function mostrarToast(msg, tipo = "ok") {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.className = "toast show " + tipo;
-    setTimeout(() => t.className = "toast", 3000);
-  }
-
-  // Cambiar sección
-  window.mostrarSeccion = function(id) {
-    document.querySelectorAll(".seccion").forEach(s => s.style.display = "none");
-    document.getElementById("sec-" + id).style.display = "block";
-    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("activo"));
-    document.querySelector(`[data-sec="${id}"]`)?.classList.add("activo");
-    if (window.innerWidth < 900) document.getElementById("sidebar").classList.remove("abierto");
-    if (id === 'turnos') cargarConfigTurnos();
-  };
-
-  window.toggleSidebar = function() {
-    document.getElementById("sidebar").classList.toggle("abierto");
-  };
-
-  // ── TURNOS CONFIG ──
-  window.toggleAgenda = function(activo) {
-    mostrarToast(activo ? 'Agenda activada' : 'Agenda desactivada', 'ok');
-  };
-
-  window.guardarConfigTurnos = async function(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btnGuardarTurnos');
-    btn.disabled = true; btn.textContent = 'Guardando...';
-    try {
-      const diasTurno = [...document.querySelectorAll('.dia-check-turno:checked')].map(d => d.value);
-      const datos = {
-        negocioId:       negocioActual.id,
-        diasDisponibles: diasTurno,
-        horaInicio:      document.getElementById('turnoHoraInicio').value,
-        horaFin:         document.getElementById('turnoHoraFin').value,
-        duracion:        Number(document.getElementById('turnoDuracion').value),
-        maxPorDia:       Number(document.getElementById('turnoMaxDia').value),
-        activo:          document.getElementById('agendaActiva').checked,
-        actualizadoEn:   new Date().toISOString()
-      };
-      await setDoc(doc(db, 'configTurnos', negocioActual.id), datos);
-      await updateDoc(doc(db, 'negocios', negocioActual.id), { tieneTurnos: datos.activo });
-      mostrarToast('Configuración guardada ✓', 'ok');
-    } catch(err) {
-      mostrarToast('Error: ' + err.message, 'error');
-    }
-    btn.disabled = false;
-    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg> Guardar configuración';
-  };
-
-  async function cargarConfigTurnos() {
-    if (!negocioActual?.id) return;
-    try {
-      const snap = await getDoc(doc(db, 'configTurnos', negocioActual.id));
-      if (snap.exists()) {
-        const cfg = snap.data();
-        const el = id => document.getElementById(id);
-        if(el('agendaActiva'))    el('agendaActiva').checked = cfg.activo || false;
-        if(el('turnoDuracion'))   el('turnoDuracion').value  = cfg.duracion || 60;
-        if(el('turnoMaxDia'))     el('turnoMaxDia').value    = cfg.maxPorDia || 8;
-        if(el('turnoHoraInicio')) el('turnoHoraInicio').value = cfg.horaInicio || '09:00';
-        if(el('turnoHoraFin'))    el('turnoHoraFin').value   = cfg.horaFin || '18:00';
-        document.querySelectorAll('.dia-check-turno').forEach(cb => {
-          cb.checked = (cfg.diasDisponibles || []).includes(cb.value);
-        });
-      }
-    } catch(e) {}
-    await cargarTurnosRecibidos();
-  }
-
-  async function cargarTurnosRecibidos() {
-    if (!negocioActual?.id) return;
-    const lista = document.getElementById('listaTurnos');
-    if (!lista) return;
-    try {
-      const q = query(collection(db, 'turnos'), where('negocioId', '==', negocioActual.id));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        lista.innerHTML = `<div style="text-align:center;padding:32px;color:var(--texto-3);font-size:14px;">
-          <p>Todavía no recibiste ningún turno.</p></div>`;
-        return;
-      }
-      const turnos = snap.docs.map(d => ({ id:d.id, ...d.data() }))
-        .sort((a,b) => (a.fecha+a.horario).localeCompare(b.fecha+b.horario));
-      lista.innerHTML = turnos.map(t => {
-        const f = new Date(t.fecha + 'T12:00:00');
-        const fechaLinda = f.toLocaleDateString('es-AR', { weekday:'short', day:'numeric', month:'short' });
-        const estados = { confirmado:'var(--verde)', cancelado:'var(--error)', pendiente:'#FF9500' };
-        const bgEstados = { confirmado:'var(--verde-suave)', cancelado:'rgba(255,59,59,0.1)', pendiente:'#FFF3E0' };
-        const est = t.estado || 'pendiente';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1.5px solid var(--borde);border-radius:var(--r-md);margin-bottom:10px;gap:12px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div style="text-align:center;background:var(--celeste-suave);border-radius:var(--r-sm);padding:8px 12px;min-width:60px;">
-              <div style="font-size:18px;font-weight:800;color:var(--celeste);font-family:'Playfair Display',serif;">${t.horario}</div>
-              <div style="font-size:11px;color:var(--texto-3);">${fechaLinda}</div>
-            </div>
-            <div>
-              <div style="font-size:14px;font-weight:700;">${t.clienteNombre}</div>
-              <div style="font-size:12px;color:var(--texto-3);">${t.clienteTel}</div>
-              ${t.clienteNota ? `<div style="font-size:12px;color:var(--texto-2);font-style:italic;margin-top:2px;">"${t.clienteNota}"</div>` : ''}
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;background:${bgEstados[est]||bgEstados.pendiente};color:${estados[est]||estados.pendiente};">${est}</span>
-            ${t.clienteTel ? `<a href="https://wa.me/${t.clienteTel.replace(/\D/g,'')}" target="_blank" style="width:32px;height:32px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;">
-              <svg viewBox="0 0 24 24" fill="white" width="15" height="15"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-            </a>` : ''}
-          </div>
-        </div>`;
-      }).join('');
-    } catch(e) {
-      if(lista) lista.innerHTML = `<div style="padding:16px;color:var(--error);font-size:13px;">Error: ${e.message}</div>`;
-    }
-  }
-</script>
-
 <style>
 :root {
-  --blanco: #FFFFFF;
-  --fondo: #F4F9FC;
-  --fondo-2: #EBF5FB;
-  --celeste: #5BADD6;
-  --celeste-claro: #C8E6F5;
-  --celeste-suave: #EBF5FC;
-  --verde: #3A8F5A;
-  --verde-suave: #EAF5EF;
-  --texto: #1A2B4A;
-  --texto-2: #3A5A72;
-  --texto-3: #7A9BB0;
-  --borde: #D8EBF5;
-  --error: #FF3B3B;
-  --r-sm: 10px; --r-md: 16px; --r-lg: 24px;
-  --sombra: 0 4px 20px rgba(42,172,226,0.08);
+  --blanco:#FFFFFF; --fondo:#F4F9FC; --fondo-2:#EBF5FB;
+  --celeste:#5BADD6; --celeste-claro:#C8E6F5; --celeste-suave:#EBF5FC;
+  --verde:#3A8F5A; --verde-suave:#EAF5EF; --verde-oscuro:#2A6E43;
+  --texto:#1A2B4A; --texto-2:#3A5A72; --texto-3:#7A9BB0;
+  --borde:#D8EBF5; --borde-2:#C2DCF0;
+  --error:#FF3B3B;
+  --r-sm:10px; --r-md:16px; --r-lg:24px;
+  --sombra:0 4px 20px rgba(42,172,226,0.08);
 }
-*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--fondo); color:var(--texto); -webkit-font-smoothing:antialiased; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--fondo);color:var(--texto);-webkit-font-smoothing:antialiased;}
 
-/* ── CARGANDO ── */
-#cargando {
-  position:fixed; inset:0; background:var(--blanco);
-  display:flex; align-items:center; justify-content:center;
-  flex-direction:column; gap:16px; z-index:999;
-}
-.spinner-grande {
-  width:48px; height:48px;
-  border:4px solid var(--celeste-claro);
-  border-top-color:var(--celeste);
-  border-radius:50%;
-  animation:girar 0.8s linear infinite;
-}
-@keyframes girar { to { transform:rotate(360deg); } }
-#cargando p { font-size:14px; color:var(--texto-3); }
+/* LOADING */
+#cargando{position:fixed;inset:0;background:var(--blanco);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:999;}
+.spinner-grande{width:48px;height:48px;border:4px solid var(--celeste-claro);border-top-color:var(--celeste);border-radius:50%;animation:girar 0.8s linear infinite;}
+@keyframes girar{to{transform:rotate(360deg);}}
 
-/* ── LAYOUT ── */
-#appContent { display:none; min-height:100vh; }
-
-.layout {
-  display:flex; min-height:100vh;
-}
+/* LAYOUT */
+#appContent{display:none;min-height:100vh;}
+.layout{display:flex;min-height:100vh;}
 
 /* SIDEBAR */
-.sidebar {
-  width:240px; flex-shrink:0;
-  background:var(--texto);
-  display:flex; flex-direction:column;
-  position:sticky; top:0; height:100vh;
-  overflow-y:auto;
-  transition:transform 0.3s;
-}
-
-.sidebar-logo {
-  padding:20px 20px 16px;
-  border-bottom:1px solid rgba(255,255,255,0.08);
-}
-.sidebar-logo img { height:36px; width:auto; }
-
-.sidebar-user {
-  padding:16px 20px;
-  border-bottom:1px solid rgba(255,255,255,0.08);
-  display:flex; align-items:center; gap:10px;
-}
-.user-avatar {
-  width:36px; height:36px; border-radius:50%;
-  background:var(--celeste);
-  display:flex; align-items:center; justify-content:center;
-  font-size:14px; font-weight:700; color:var(--blanco);
-  flex-shrink:0;
-}
-.user-info { flex:1; min-width:0; }
-.user-nombre { font-size:13px; font-weight:700; color:var(--blanco); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.user-rol    { font-size:11px; color:rgba(255,255,255,0.4); }
-
-.sidebar-nav { flex:1; padding:12px 0; }
-
-.nav-grupo-titulo {
-  font-size:10px; font-weight:700; letter-spacing:0.1em;
-  text-transform:uppercase; color:rgba(255,255,255,0.25);
-  padding:8px 20px 4px;
-}
-
-.nav-item {
-  display:flex; align-items:center; gap:10px;
-  padding:10px 20px;
-  font-size:13px; font-weight:500;
-  color:rgba(255,255,255,0.55);
-  cursor:pointer; transition:all 0.2s;
-  border-left:3px solid transparent;
-}
-.nav-item:hover { color:var(--blanco); background:rgba(255,255,255,0.04); }
-.nav-item.activo {
-  color:var(--blanco);
-  background:rgba(91,173,214,0.15);
-  border-left-color:var(--celeste);
-}
-.nav-item svg { width:16px; height:16px; flex-shrink:0; }
-
-.sidebar-bottom {
-  padding:12px 0;
-  border-top:1px solid rgba(255,255,255,0.08);
-}
+.sidebar{width:240px;flex-shrink:0;background:var(--texto);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;transition:transform 0.3s;}
+.sidebar-logo{padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.sidebar-logo img{height:38px;width:auto;}
+.sidebar-user{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px;}
+.user-avatar-wrap{width:36px;height:36px;border-radius:50%;background:var(--celeste);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--blanco);flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+.user-nombre{font-size:13px;font-weight:700;color:var(--blanco);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-rol{font-size:11px;color:rgba(255,255,255,0.4);}
+.sidebar-nav{flex:1;padding:12px 0;}
+.nav-grupo-titulo{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.25);padding:8px 20px 4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:13px;font-weight:500;color:rgba(255,255,255,0.55);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;}
+.nav-item:hover{color:var(--blanco);background:rgba(255,255,255,0.04);}
+.nav-item.activo{color:var(--blanco);background:rgba(91,173,214,0.15);border-left-color:var(--celeste);}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+.sidebar-bottom{padding:12px 0;border-top:1px solid rgba(255,255,255,0.08);}
 
 /* MAIN */
-.main-content {
-  flex:1; min-width:0;
-  display:flex; flex-direction:column;
-}
-
-/* TOPBAR */
-.topbar {
-  height:64px; background:var(--blanco);
-  border-bottom:1.5px solid var(--borde);
-  display:flex; align-items:center; justify-content:space-between;
-  padding:0 28px; gap:16px;
-  position:sticky; top:0; z-index:50;
-}
-.topbar-titulo {
-  font-family:'Playfair Display',serif;
-  font-size:20px; font-weight:700;
-}
-.topbar-acciones { display:flex; align-items:center; gap:10px; }
-.btn-hamburger {
-  display:none; background:none; border:none; cursor:pointer;
-  padding:4px;
-}
-.btn-hamburger svg { width:22px; height:22px; stroke:var(--texto); }
-
-/* CONTENIDO */
-.content-area { flex:1; padding:28px; }
-
-.seccion { display:none; }
-.seccion:first-of-type { display:block; }
-
-/* ── CARDS RESUMEN ── */
-.resumen-grid {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:16px; margin-bottom:28px;
-}
-.res-card {
-  background:var(--blanco);
-  border:1.5px solid var(--borde);
-  border-radius:var(--r-lg);
-  padding:20px 22px;
-  display:flex; align-items:center; gap:14px;
-}
-.res-icono {
-  width:46px; height:46px; border-radius:12px;
-  display:flex; align-items:center; justify-content:center;
-  flex-shrink:0;
-}
-.res-icono.cel { background:var(--celeste-suave); }
-.res-icono.ver { background:var(--verde-suave); }
-.res-icono svg { width:22px; height:22px; }
-.res-num {
-  font-family:'Playfair Display',serif;
-  font-size:24px; font-weight:700; color:var(--texto);
-}
-.res-lbl { font-size:12px; color:var(--texto-3); font-weight:500; }
-
-/* PERFIL NEGOCIO */
-.perfil-card {
-  background:var(--blanco);
-  border:1.5px solid var(--borde);
-  border-radius:var(--r-lg);
-  overflow:hidden;
-  margin-bottom:20px;
-}
-.perfil-cover {
-  height:100px;
-  background:linear-gradient(135deg, var(--celeste) 0%, #3A8F5A 100%);
-  position:relative;
-}
-.perfil-avatar {
-  width:72px; height:72px;
-  border-radius:var(--r-md);
-  border:3px solid var(--blanco);
-  background:var(--fondo);
-  position:absolute; bottom:-36px; left:24px;
-  overflow:hidden; box-shadow:var(--sombra);
-  display:flex; align-items:center; justify-content:center;
-}
-.perfil-avatar img { width:100%; height:100%; object-fit:cover; display:none; }
-.perfil-avatar svg { width:28px; height:28px; stroke:var(--texto-3); }
-
-.perfil-body { padding:48px 24px 24px; }
-.perfil-nombre {
-  font-family:'Playfair Display',serif;
-  font-size:20px; font-weight:700; margin-bottom:4px;
-}
-.perfil-info-grid {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  gap:12px; margin-top:16px;
-}
-.perfil-dato {
-  display:flex; flex-direction:column; gap:2px;
-}
-.perfil-dato-lbl { font-size:11px; color:var(--texto-3); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; }
-.perfil-dato-val { font-size:14px; color:var(--texto); font-weight:500; }
+.main-content{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{height:64px;background:var(--blanco);border-bottom:1.5px solid var(--borde);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;}
+.topbar-titulo{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;}
+.btn-hamburger{display:none;background:none;border:none;cursor:pointer;padding:4px;}
+.btn-hamburger svg{width:22px;height:22px;stroke:var(--texto);}
+.content-area{flex:1;padding:28px;}
+.seccion{display:none;}
 
 /* ESTADO BADGE */
-.estado-badge {
-  display:inline-flex; align-items:center; gap:5px;
-  padding:3px 10px; border-radius:100px;
-  font-size:12px; font-weight:600;
-}
-.estado-badge.aprobado { background:var(--verde-suave); color:var(--verde); }
-.estado-badge.pendiente { background:#FFF3E0; color:#E65100; }
+.estado-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:600;}
+.aprobado{background:var(--verde-suave);color:var(--verde);}
+.pendiente{background:#FFF3E0;color:#E65100;}
 
-/* LÍMITE BARRA */
-.limite-wrap {
-  background:var(--blanco); border:1.5px solid var(--borde);
-  border-radius:var(--r-md); padding:16px 20px;
-  margin-bottom:20px;
-}
-.limite-header { display:flex; justify-content:space-between; margin-bottom:8px; }
-.limite-lbl { font-size:13px; font-weight:600; color:var(--texto-2); }
-.limite-num { font-size:13px; font-weight:700; color:var(--texto); }
-.barra-track {
-  height:6px; background:var(--fondo-2);
-  border-radius:3px; overflow:hidden;
-}
-.barra-fill {
-  height:100%; background:var(--verde);
-  border-radius:3px; transition:width 0.5s ease;
-}
+/* CARDS RESUMEN */
+.resumen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;}
+.res-card{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);padding:18px 20px;display:flex;align-items:center;gap:14px;}
+.res-icono{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.res-icono.cel{background:var(--celeste-suave);}
+.res-icono.ver{background:var(--verde-suave);}
+.res-icono svg{width:20px;height:20px;}
+.res-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--texto);}
+.res-lbl{font-size:12px;color:var(--texto-3);font-weight:500;}
+
+/* LIMITE BARRA */
+.limite-wrap{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-md);padding:14px 18px;margin-bottom:20px;}
+.limite-header{display:flex;justify-content:space-between;margin-bottom:7px;}
+.limite-lbl{font-size:13px;font-weight:600;color:var(--texto-2);}
+.limite-num{font-size:13px;font-weight:700;color:var(--texto);}
+.barra-track{height:5px;background:var(--fondo-2);border-radius:3px;overflow:hidden;}
+.barra-fill{height:100%;background:var(--verde);border-radius:3px;transition:width 0.5s ease;}
 
 /* PUBLICACIONES GRID */
-.pub-grid {
-  display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-  gap:16px;
-}
-.pub-card {
-  background:var(--blanco); border:1.5px solid var(--borde);
-  border-radius:var(--r-lg); overflow:hidden; transition:all 0.25s;
-}
-.pub-card:hover { box-shadow:var(--sombra); transform:translateY(-3px); }
-.pub-card.pendiente-card { border-color:#FFE0B2; }
-
-.pub-img {
-  height:140px; background:var(--fondo-2);
-  display:flex; align-items:center; justify-content:center;
-  position:relative; background-size:cover; background-position:center;
-}
-.pub-estado-badge {
-  position:absolute; top:8px; left:8px;
-  padding:3px 10px; border-radius:100px;
-  font-size:11px; font-weight:700;
-}
-.pub-estado-badge.ap { background:rgba(58,143,90,0.15); color:var(--verde); }
-.pub-estado-badge.pe { background:rgba(255,152,0,0.15); color:#E65100; }
-
-.pub-body { padding:14px; }
-.pub-cat  { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--celeste); margin-bottom:3px; }
-.pub-titulo { font-size:15px; font-weight:700; margin-bottom:4px; }
-.pub-precio { font-size:16px; font-weight:800; color:var(--verde); margin-bottom:12px; }
-.pub-acciones { display:flex; gap:6px; }
-
-.btn-pub-edit {
-  flex:1; height:32px;
-  background:var(--celeste-suave); color:var(--celeste);
-  border:1px solid var(--celeste-claro); border-radius:100px;
-  font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:12px; font-weight:600; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; gap:4px;
-  transition:all 0.2s;
-}
-.btn-pub-edit:hover { background:var(--celeste); color:var(--blanco); }
-
-.btn-pub-del {
-  flex:1; height:32px;
-  background:rgba(255,59,59,0.06); color:var(--error);
-  border:1px solid rgba(255,59,59,0.15); border-radius:100px;
-  font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:12px; font-weight:600; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; gap:4px;
-  transition:all 0.2s;
-}
-.btn-pub-del:hover { background:var(--error); color:var(--blanco); }
+.pub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+.pub-card{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;transition:all 0.25s;}
+.pub-card:hover{box-shadow:var(--sombra);transform:translateY(-2px);}
+.pub-img{height:140px;background:var(--fondo-2);display:flex;align-items:center;justify-content:center;position:relative;background-size:cover;background-position:center;}
+.pub-estado-badge{position:absolute;top:8px;left:8px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;}
+.ap{background:rgba(58,143,90,0.15);color:var(--verde);}
+.pe{background:rgba(255,152,0,0.15);color:#E65100;}
+.pub-body{padding:14px;}
+.pub-cat{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--celeste);margin-bottom:3px;}
+.pub-titulo{font-size:15px;font-weight:700;margin-bottom:4px;}
+.pub-precio{font-size:16px;font-weight:800;color:var(--verde);margin-bottom:10px;}
+.pub-acciones{display:flex;gap:6px;}
+.btn-pub-edit{flex:1;height:32px;background:var(--celeste-suave);color:var(--celeste);border:1px solid var(--celeste-claro);border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;}
+.btn-pub-edit:hover{background:var(--celeste);color:var(--blanco);}
+.btn-pub-del{flex:1;height:32px;background:rgba(255,59,59,0.06);color:var(--error);border:1px solid rgba(255,59,59,0.15);border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;}
+.btn-pub-del:hover{background:var(--error);color:var(--blanco);}
 
 /* SIN PUBLICACIONES */
-.sin-pubs {
-  display:none; flex-direction:column; align-items:center;
-  justify-content:center; padding:60px 20px; text-align:center;
-  background:var(--blanco); border:1.5px dashed var(--borde);
-  border-radius:var(--r-lg);
-}
-.sin-pubs svg { width:48px; height:48px; stroke:var(--texto-3); margin-bottom:16px; }
-.sin-pubs h3 { font-size:17px; font-weight:700; margin-bottom:6px; }
-.sin-pubs p  { font-size:14px; color:var(--texto-2); }
+.sin-pubs{display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;background:var(--blanco);border:1.5px dashed var(--borde);border-radius:var(--r-lg);}
+.sin-pubs svg{width:48px;height:48px;stroke:var(--texto-3);margin-bottom:16px;}
+.sin-pubs h3{font-size:17px;font-weight:700;margin-bottom:6px;}
+.sin-pubs p{font-size:14px;color:var(--texto-2);}
 
 /* BOTONES */
-.btn {
-  display:inline-flex; align-items:center; gap:7px;
-  padding:0 20px; height:40px; border-radius:100px;
-  font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:14px; font-weight:600; cursor:pointer;
-  text-decoration:none; border:none; transition:all 0.2s;
-}
-.btn-celeste { background:var(--celeste); color:var(--blanco); box-shadow:0 4px 14px rgba(91,173,214,0.3); }
-.btn-celeste:hover { background:#4A9DC6; transform:translateY(-1px); }
-.btn-ghost   { background:transparent; color:var(--texto-2); border:1.5px solid var(--borde); }
-.btn-ghost:hover { border-color:var(--celeste); color:var(--celeste); }
-.btn-error   { background:rgba(255,59,59,0.08); color:var(--error); border:1.5px solid rgba(255,59,59,0.2); }
-.btn-error:hover { background:var(--error); color:var(--blanco); }
+.btn{display:inline-flex;align-items:center;gap:7px;padding:0 20px;height:40px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;border:none;transition:all 0.2s;}
+.btn-celeste{background:var(--celeste);color:var(--blanco);box-shadow:0 4px 14px rgba(91,173,214,0.3);}
+.btn-celeste:hover{background:#4A9DC6;transform:translateY(-1px);}
+.btn-celeste:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.btn-ghost{background:transparent;color:var(--texto-2);border:1.5px solid var(--borde-2);}
+.btn-ghost:hover{border-color:var(--celeste);color:var(--celeste);}
+.btn-error{background:rgba(255,59,59,0.08);color:var(--error);border:1.5px solid rgba(255,59,59,0.2);}
 
 /* MODAL */
-.modal-overlay {
-  display:none; position:fixed; inset:0;
-  background:rgba(26,43,74,0.5); backdrop-filter:blur(6px);
-  z-index:200; align-items:center; justify-content:center; padding:20px;
-}
-.modal-box {
-  background:var(--blanco); border-radius:var(--r-lg);
-  width:100%; max-width:520px;
-  max-height:90vh; overflow-y:auto;
-  box-shadow:0 24px 64px rgba(0,0,0,0.15);
-  animation:aparecer 0.3s ease;
-}
-@keyframes aparecer { from{transform:scale(0.96);opacity:0} to{transform:scale(1);opacity:1} }
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,43,74,0.5);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:var(--blanco);border-radius:var(--r-lg);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.15);animation:aparecer 0.3s ease;}
+@keyframes aparecer{from{transform:scale(0.96);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1.5px solid var(--borde);}
+.modal-header h3{font-family:'Playfair Display',serif;font-size:20px;}
+.btn-cerrar-modal{background:none;border:none;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--texto-3);transition:all 0.2s;}
+.btn-cerrar-modal:hover{background:var(--fondo);color:var(--texto);}
+.btn-cerrar-modal svg{width:18px;height:18px;}
+.modal-body{padding:24px;}
+.modal-footer{padding:14px 24px;border-top:1.5px solid var(--borde);display:flex;gap:10px;justify-content:flex-end;}
 
-.modal-header {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:20px 24px; border-bottom:1.5px solid var(--borde);
+/* FORM */
+.grupo{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+label{font-size:13px;font-weight:600;color:var(--texto-2);}
+input[type="text"],input[type="number"],input[type="time"],select,textarea{
+  width:100%;height:44px;padding:0 12px;
+  background:var(--fondo);border:1.5px solid transparent;
+  border-radius:var(--r-sm);font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:14px;color:var(--texto);outline:none;transition:all 0.2s;-webkit-appearance:none;
 }
-.modal-header h3 { font-family:'Playfair Display',serif; font-size:20px; }
-.btn-cerrar-modal {
-  background:none; border:none; cursor:pointer;
-  width:32px; height:32px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  color:var(--texto-3); transition:all 0.2s;
-}
-.btn-cerrar-modal:hover { background:var(--fondo); color:var(--texto); }
-.btn-cerrar-modal svg { width:18px; height:18px; }
+input:focus,select:focus,textarea:focus{border-color:var(--celeste);background:var(--blanco);box-shadow:0 0 0 3px rgba(91,173,214,0.1);}
+textarea{height:80px;padding:10px 12px;resize:vertical;}
 
-.modal-body { padding:24px; }
+/* UPLOAD AREA */
+.upload-area{border:2px dashed var(--borde);border-radius:var(--r-md);padding:16px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--fondo);}
+.upload-area:hover{border-color:var(--celeste);background:var(--celeste-suave);}
+.upload-area input{display:none;}
+.upload-area p{font-size:13px;color:var(--texto-3);}
 
-.grupo { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
-label  { font-size:13px; font-weight:600; color:var(--texto-2); }
-input[type="text"], input[type="number"], select, textarea {
-  width:100%; height:44px;
-  padding:0 14px;
-  background:var(--fondo); border:1.5px solid transparent;
-  border-radius:var(--r-sm);
-  font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:14px; color:var(--texto);
-  outline:none; transition:all 0.2s; -webkit-appearance:none;
-}
-input:focus, select:focus, textarea:focus {
-  border-color:var(--celeste); background:var(--blanco);
-  box-shadow:0 0 0 3px rgba(91,173,214,0.1);
-}
-textarea { height:80px; padding:10px 14px; resize:vertical; }
+/* DIA TOGGLE */
+.dia-toggle input{display:none;}
+.dia-inner{display:flex;align-items:center;justify-content:center;height:34px;border-radius:8px;background:var(--fondo);border:1.5px solid transparent;font-size:12px;font-weight:600;color:var(--texto-3);cursor:pointer;transition:all 0.2s;user-select:none;}
+.dia-toggle input:checked + .dia-inner{background:var(--celeste);color:var(--blanco);border-color:var(--celeste);}
 
-.upload-area {
-  border:2px dashed var(--borde); border-radius:var(--r-md);
-  padding:20px; text-align:center; cursor:pointer;
-  transition:all 0.2s; background:var(--fondo);
-}
-.upload-area:hover { border-color:var(--celeste); background:var(--celeste-suave); }
-.upload-area input { display:none; }
-#pubImgPreview { display:none; width:100%; height:120px; object-fit:cover; border-radius:var(--r-sm); margin-bottom:8px; }
-.upload-area p { font-size:13px; color:var(--texto-3); }
-
-.modal-footer {
-  padding:16px 24px; border-top:1.5px solid var(--borde);
-  display:flex; gap:10px; justify-content:flex-end;
-}
+/* PERFIL CARD */
+.perfil-cover{height:80px;background:linear-gradient(135deg,var(--celeste) 0%,var(--verde) 100%);position:relative;}
+.perfil-avatar{width:80px;height:80px;border-radius:var(--r-md);border:4px solid var(--blanco);position:absolute;bottom:-40px;left:20px;background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--blanco);overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);background-size:cover;background-position:center;}
 
 /* TOAST */
-.toast {
-  position:fixed; bottom:24px; left:50%;
-  transform:translateX(-50%) translateY(16px);
-  padding:11px 22px; border-radius:100px;
-  font-size:14px; font-weight:600;
-  opacity:0; transition:all 0.3s; z-index:500;
-  white-space:nowrap; pointer-events:none;
-}
-.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-.toast.ok    { background:var(--texto); color:var(--blanco); }
-.toast.error { background:var(--error); color:var(--blanco); }
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);padding:11px 22px;border-radius:100px;font-size:14px;font-weight:600;opacity:0;transition:all 0.3s;z-index:500;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{background:var(--texto);color:var(--blanco);}
+.toast.error{background:var(--error);color:var(--blanco);}
 
-/* SECCION TÍTULO */
-.sec-titulo-wrap {
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:20px; flex-wrap:wrap; gap:12px;
-}
-.sec-titulo {
-  font-family:'Playfair Display',serif;
-  font-size:22px; font-weight:700;
-}
+/* SEC TITULO */
+.sec-titulo-wrap{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.sec-titulo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;}
+
+/* TURNOS CARD */
+.turno-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1.5px solid var(--borde);border-radius:var(--r-md);margin-bottom:10px;gap:12px;flex-wrap:wrap;}
+.turno-hora{text-align:center;background:var(--celeste-suave);border-radius:var(--r-sm);padding:8px 12px;min-width:60px;}
+.turno-hora-num{font-size:17px;font-weight:800;color:var(--celeste);font-family:'Playfair Display',serif;}
+.turno-hora-fecha{font-size:11px;color:var(--texto-3);}
 
 /* RESPONSIVE */
-@media (max-width:900px) {
-  .sidebar {
-    position:fixed; top:0; left:0; bottom:0; z-index:100;
-    transform:translateX(-100%);
-  }
-  .sidebar.abierto { transform:translateX(0); }
-  .btn-hamburger { display:flex; }
-  .content-area { padding:20px 16px; }
+@media(max-width:900px){
+  .sidebar{position:fixed;top:0;left:0;bottom:0;z-index:100;transform:translateX(-100%);}
+  .sidebar.abierto{transform:translateX(0);}
+  .btn-hamburger{display:flex;}
+  .content-area{padding:20px 16px;}
 }
 </style>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, query, where,
+         getDocs, addDoc, updateDoc, deleteDoc, setDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const CLOUDINARY_CLOUD  = "dhrhg6ng6";
+const CLOUDINARY_PRESET = "punto_chaco_uploads";
+
+const app  = initializeApp({
+  apiKey:"AIzaSyCibGsSHDHn6c8VXLzUlqeKXpaxibfpVuc",
+  authDomain:"chacoemprende-df731.firebaseapp.com",
+  projectId:"chacoemprende-df731",
+  storageBucket:"chacoemprende-df731.firebasestorage.app",
+  messagingSenderId:"871612466602",
+  appId:"1:871612466602:web:fe62a4f01c38d5b2c417d3"
+});
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+const SERVICIOS = ['Barbería','Manicuría','Cosmetología','Tratamientos de piel',
+  'Educación','Animales','Deportes','Entrenamiento personal','Reparaciones',
+  'Fotografía','Diseño','Marketing','Tecnología','Otros servicios'];
+
+const PROHIBIDAS = ["cigarrillo","cigarro","tabaco","alcohol","cerveza","vino",
+  "fernet","whisky","vodka","droga","cocaina","marihuana","cannabis","paco"];
+const PROHIBIDAS_TIPO = ["vendo moto","vendo auto","vendo casa","segunda mano","permuto","liquido","remato"];
+
+function contieneProhibidas(txt) {
+  const t = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  if (PROHIBIDAS.some(p => t.includes(p))) return { bloqueado:true, razon:"contiene palabras prohibidas" };
+  if (PROHIBIDAS_TIPO.some(p => t.includes(p))) return { bloqueado:true, razon:"solo se permiten productos o servicios propios" };
+  return { bloqueado:false };
+}
+
+// ── Estado global ──
+let usuarioActual  = null;
+let negocioActual  = null;
+let publicaciones  = [];
+let stockItems     = [];
+let esServicio     = false;
+
+// ── AUTH GUARD ──
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "login.html"; return; }
+
+  const snap = await getDoc(doc(db, "usuarios", user.uid));
+  if (!snap.exists() || snap.data().rol !== "vendedor") {
+    window.location.href = snap.data()?.rol === "admin" ? "admin.html" : "index.html"; return;
+  }
+  if (snap.data().baneado) { await signOut(auth); window.location.href="login.html"; return; }
+
+  usuarioActual = { uid: user.uid, ...snap.data() };
+
+  // Cargar negocio
+  try {
+    const nd = await getDoc(doc(db, "negocios", user.uid));
+    if (nd.exists()) {
+      negocioActual = { id: nd.id, ...nd.data() };
+    } else {
+      const nq = query(collection(db,"negocios"), where("propietarioId","==",user.uid));
+      const ns = await getDocs(nq);
+      if (!ns.empty) negocioActual = { id: ns.docs[0].id, ...ns.docs[0].data() };
+    }
+  } catch(e) { console.error(e); }
+
+  esServicio = SERVICIOS.includes(negocioActual?.categoria);
+
+  renderUI();
+  await cargarPublicaciones();
+  if (!esServicio) await cargarStock();
+
+  document.getElementById("cargando").style.display = "none";
+  document.getElementById("appContent").style.display = "flex";
+});
+
+// ── RENDER UI ──
+function renderUI() {
+  const s = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v||""; };
+
+  s("userNombreTop", `${usuarioActual.nombre||""} ${usuarioActual.apellido||""}`);
+  s("negNombreTop",   negocioActual?.nombre || "Mi negocio");
+
+  const est = document.getElementById("estNegocio");
+  if (est) {
+    const aprobado = negocioActual?.aprobado === true || negocioActual?.aprobado === "true";
+    est.textContent = aprobado ? "Aprobado" : "Pendiente";
+    est.className   = "estado-badge " + (aprobado ? "aprobado" : "pendiente");
+  }
+
+  // Avatar sidebar
+  const av = document.getElementById("sidebarAvatar");
+  if (av) {
+    if (negocioActual?.logoUrl) {
+      av.style.backgroundImage = `url('${negocioActual.logoUrl}')`;
+      av.textContent = "";
+    } else {
+      av.textContent = (usuarioActual.nombre||"?")[0].toUpperCase();
+    }
+  }
+
+  // Nav: mostrar turnos o stock según tipo
+  const navTurnos = document.getElementById("navTurnos");
+  const navStock  = document.getElementById("navStock");
+  if (navTurnos) navTurnos.style.display = esServicio ? "flex" : "none";
+  if (navStock)  navStock.style.display  = !esServicio ? "flex" : "none";
+
+  // Stats resumen
+  s("statLocalidad", negocioActual?.localidad);
+  s("statCategoria", negocioActual?.categoria);
+  s("statWa",        negocioActual?.whatsapp);
+
+  // Perfil negocio (sección Mi negocio)
+  rellenarFormEdicion();
+
+  // Verificado badge
+  const vbadge = document.getElementById("dashVerBadge");
+  if (vbadge) vbadge.style.display = negocioActual?.verificado ? "inline-flex" : "none";
+}
+
+// ── PUBLICACIONES ──
+async function cargarPublicaciones() {
+  let pubs = [];
+  try {
+    const q1 = query(collection(db,"publicaciones"), where("propietarioId","==",usuarioActual.uid));
+    const s1 = await getDocs(q1);
+    pubs = s1.docs.map(d => ({id:d.id,...d.data()}));
+  } catch(e) {}
+  if (!pubs.length && negocioActual?.id) {
+    try {
+      const q2 = query(collection(db,"publicaciones"), where("negocioId","==",negocioActual.id));
+      const s2 = await getDocs(q2);
+      pubs = s2.docs.map(d => ({id:d.id,...d.data()}));
+    } catch(e) {}
+  }
+  publicaciones = pubs;
+  renderPublicaciones();
+
+  // Contadores — límite 15/mes
+  const ahora   = new Date();
+  const estesMes = publicaciones.filter(p => {
+    if (!p.creadoEn) return false;
+    const f = new Date(p.creadoEn.seconds ? p.creadoEn.seconds*1000 : p.creadoEn);
+    return f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
+  }).length;
+
+  const setTxt = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  setTxt("contadorPubs", publicaciones.length);
+  setTxt("limitePubs",   `${estesMes}/15 este mes`);
+  setTxt("dashPubs",     publicaciones.length);
+
+  const pct = (estesMes/15)*100;
+  ["barraLimite"].forEach(id => {
+    const e = document.getElementById(id);
+    if(e) { e.style.width=pct+"%"; e.style.background = pct>=100?"var(--error)":pct>=70?"#FF9500":"var(--verde)"; }
+  });
+}
+
+function renderPublicaciones() {
+  const grid  = document.getElementById("gridPublicaciones");
+  const empty = document.getElementById("sinPublicaciones");
+  const grid2 = document.getElementById("gridPublicacionesHome");
+  const empty2= document.getElementById("sinPublicacionesHome");
+
+  const html = publicaciones.map(p => {
+    const imgs = p.imagenes || (p.imageUrl ? [p.imageUrl] : []);
+    const img0 = imgs[0] || "";
+    return `<div class="pub-card">
+      <div class="pub-img" style="${img0?`background-image:url('${img0}')`:``}">
+        ${!img0?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color:var(--texto-3)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`:""}
+        <div class="pub-estado-badge ${p.aprobado?'ap':'pe'}">${p.aprobado?"Publicada":"Pendiente"}</div>
+      </div>
+      <div class="pub-body">
+        <div class="pub-cat">${p.categoria||""}</div>
+        <div class="pub-titulo">${p.titulo||""}</div>
+        <div class="pub-precio">$${Number(p.precio||0).toLocaleString("es-AR")}</div>
+        <div class="pub-acciones">
+          <button onclick="abrirEditarPub('${p.id}')" class="btn-pub-edit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Editar
+          </button>
+          <button onclick="eliminarPub('${p.id}')" class="btn-pub-del">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  if (grid) { grid.style.display = publicaciones.length?"grid":"none"; grid.innerHTML = html; }
+  if (grid2) { grid2.style.display = publicaciones.length?"grid":"none"; grid2.innerHTML = html; }
+  if (empty)  empty.style.display  = publicaciones.length?"none":"flex";
+  if (empty2) empty2.style.display = publicaciones.length?"none":"flex";
+}
+
+// ── MODAL PUBLICACIÓN ──
+window.abrirModalPub = function(id=null) {
+  // Verificar límite mensual
+  if (!id) {
+    const ahora = new Date();
+    const estesMes = publicaciones.filter(p => {
+      if (!p.creadoEn) return false;
+      const f = new Date(p.creadoEn.seconds ? p.creadoEn.seconds*1000 : p.creadoEn);
+      return f.getMonth()===ahora.getMonth() && f.getFullYear()===ahora.getFullYear();
+    }).length;
+    if (estesMes >= 15) {
+      mostrarToast("Alcanzaste el límite de 15 publicaciones este mes.", "error");
+      return;
+    }
+  }
+  document.getElementById("modalPub").style.display = "flex";
+  document.getElementById("modalPubTitulo").textContent = id ? "Editar publicación" : "Nueva publicación";
+  document.getElementById("pubId").value = id || "";
+  if (id) {
+    const p = publicaciones.find(x => x.id===id);
+    if (p) {
+      const g = i => document.getElementById(i);
+      if(g("pubTitulo"))      g("pubTitulo").value      = p.titulo||"";
+      if(g("pubDescripcion")) g("pubDescripcion").value = p.descripcion||"";
+      if(g("pubPrecio"))      g("pubPrecio").value      = p.precio||"";
+      if(g("pubCategoria"))   g("pubCategoria").value   = p.categoria||"";
+      const prev = document.getElementById("pubImgsPreview");
+      if(prev && p.imageUrl) {
+        prev.style.display = "flex";
+        prev.innerHTML = `<img src="${p.imageUrl}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;">`;
+      }
+    }
+  } else {
+    const f = document.getElementById("formPub");
+    if(f) f.reset();
+    const prev = document.getElementById("pubImgsPreview");
+    if(prev) { prev.style.display="none"; prev.innerHTML=""; }
+  }
+};
+
+window.abrirEditarPub = id => window.abrirModalPub(id);
+window.cerrarModalPub = () => { document.getElementById("modalPub").style.display="none"; };
+
+window.previewImgPub = function(input) {
+  const files = Array.from(input.files).slice(0,3);
+  const prev  = document.getElementById("pubImgsPreview");
+  const txt   = input.parentElement.querySelector("p");
+  if(!files.length||!prev) return;
+  prev.style.display = "flex";
+  prev.innerHTML = "";
+  files.forEach(f => {
+    const r = new FileReader();
+    r.onload = e => {
+      const img = document.createElement("img");
+      img.src = e.target.result;
+      img.style.cssText = "width:70px;height:70px;object-fit:cover;border-radius:8px;border:1.5px solid var(--borde);";
+      prev.appendChild(img);
+    };
+    r.readAsDataURL(f);
+  });
+  if(txt) txt.textContent = files.length+" imagen"+(files.length>1?"es":"")+" seleccionada"+(files.length>1?"s":"");
+};
+
+window.guardarPublicacion = async function(e) {
+  e.preventDefault();
+  const id          = document.getElementById("pubId").value;
+  const titulo      = document.getElementById("pubTitulo").value.trim();
+  const descripcion = document.getElementById("pubDescripcion").value.trim();
+  const precio      = document.getElementById("pubPrecio").value;
+  const categoria   = document.getElementById("pubCategoria").value;
+  const imgFiles    = document.getElementById("pubImagen").files;
+
+  if (!titulo)  return mostrarToast("Ingresá un título","error");
+  if (!precio||Number(precio)<=0) return mostrarToast("Ingresá un precio válido","error");
+  if (!categoria) return mostrarToast("Seleccioná una categoría","error");
+
+  const chk = contieneProhibidas(titulo+" "+descripcion);
+  if (chk.bloqueado) return mostrarToast("No permitido: "+chk.razon,"error");
+
+  setBtnPub(true);
+  let imagenes = id ? (publicaciones.find(x=>x.id===id)?.imagenes||[]) : [];
+
+  if (imgFiles && imgFiles.length>0) {
+    const limite = Math.min(imgFiles.length,3);
+    imagenes = [];
+    for (let i=0; i<limite; i++) {
+      try {
+        setBtnPub(true, `Subiendo imagen ${i+1}/${limite}...`);
+        const fd = new FormData();
+        fd.append("file", imgFiles[i]);
+        fd.append("upload_preset", CLOUDINARY_PRESET);
+        fd.append("folder","punto-chaco/publicaciones");
+        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{method:"POST",body:fd});
+        const data = await res.json();
+        if (data.secure_url) imagenes.push(data.secure_url);
+      } catch(er) { mostrarToast("Error subiendo imagen "+(i+1),"error"); }
+    }
+  }
+
+  setBtnPub(true,"Guardando...");
+  const datos = {
+    titulo, descripcion, precio:Number(precio), categoria, imagenes,
+    imageUrl:imagenes[0]||"",
+    negocioId: negocioActual?.id||usuarioActual.uid,
+    propietarioId: usuarioActual.uid,
+    localidad: negocioActual?.localidad||"",
+    nombreNegocio: negocioActual?.nombre||"",
+    aprobado: true, activo:true,
+  };
+  try {
+    if (id) {
+      await updateDoc(doc(db,"publicaciones",id), datos);
+      mostrarToast("Publicación actualizada","ok");
+    } else {
+      datos.creadoEn = serverTimestamp();
+      await addDoc(collection(db,"publicaciones"), datos);
+      mostrarToast("¡Publicación publicada!","ok");
+    }
+    window.cerrarModalPub();
+    await cargarPublicaciones();
+  } catch(err) { mostrarToast("Error: "+err.message,"error"); }
+  setBtnPub(false);
+};
+
+window.eliminarPub = async function(id) {
+  if (!confirm("¿Eliminar esta publicación?")) return;
+  await deleteDoc(doc(db,"publicaciones",id));
+  mostrarToast("Publicación eliminada","ok");
+  await cargarPublicaciones();
+};
+
+function setBtnPub(loading, txt="Guardar publicación") {
+  const btn = document.getElementById("btnGuardarPub");
+  if(btn) { btn.disabled=loading; btn.textContent=loading?txt:"Guardar publicación"; }
+}
+
+// ── EDITAR NEGOCIO ──
+function rellenarFormEdicion() {
+  if (!negocioActual) return;
+  const n = negocioActual;
+  const s = (id,v) => { const e=document.getElementById(id); if(e) e.value=v||""; };
+  s("editNombre",    n.nombre);
+  s("editLocalidad", n.localidad);
+  s("editWhatsapp",  n.whatsapp);
+  s("editInstagram", n.instagram);
+  s("editDireccion", n.direccion);
+  s("editDescripcion", n.descripcion);
+  s("editApertura",  n.horarios?.apertura||"09:00");
+  s("editCierre",    n.horarios?.cierre||"18:00");
+
+  document.querySelectorAll(".dia-check-edit").forEach(cb => {
+    cb.checked = (n.horarios?.dias||[]).includes(cb.value);
+  });
+
+  const av = document.getElementById("perfilAvatarImg");
+  const letra = document.getElementById("perfilAvatarLetra");
+  if (n.logoUrl) {
+    if(av) { av.style.backgroundImage=`url('${n.logoUrl}')`; }
+    if(letra) letra.style.display="none";
+  } else {
+    if(letra) letra.textContent=(n.nombre||"?")[0].toUpperCase();
+  }
+
+  const dashNom = document.getElementById("dashNombreNegocio");
+  const dashCat = document.getElementById("dashCatNegocio");
+  const dashSegs = document.getElementById("dashSeguidores");
+  if(dashNom) dashNom.textContent = n.nombre||"";
+  if(dashCat) dashCat.textContent = n.categoria||"";
+  if(dashSegs) dashSegs.textContent = n.seguidores||0;
+
+  const vb = document.getElementById("dashVerBadge");
+  if(vb) vb.style.display = n.verificado?"inline-flex":"none";
+
+  const lp = document.getElementById("linkPerfilPublico");
+  if(lp&&n.slug) lp.href=`negocio.html?slug=${n.slug}`;
+
+  if (n.logoUrl) {
+    const prevWrap = document.getElementById("editLogoPreviewWrap");
+    const prevImg  = document.getElementById("editLogoPreview");
+    const prevTxt  = document.getElementById("editLogoTexto");
+    if(prevWrap) prevWrap.style.display="block";
+    if(prevImg)  prevImg.src=n.logoUrl;
+    if(prevTxt)  prevTxt.textContent="Logo actual";
+  }
+}
+
+window.previewEditLogo = function(input) {
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    const w=document.getElementById("editLogoPreviewWrap");
+    const i=document.getElementById("editLogoPreview");
+    const t=document.getElementById("editLogoTexto");
+    if(w) w.style.display="block";
+    if(i) i.src=e.target.result;
+    if(t) t.textContent="Logo seleccionado ✓";
+  };
+  r.readAsDataURL(f);
+};
+
+window.guardarDatosNegocio = async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById("btnGuardarNegocio");
+  if(btn) { btn.disabled=true; btn.textContent="Guardando..."; }
+
+  try {
+    const g = id => document.getElementById(id)?.value||"";
+    const nombre      = g("editNombre").trim();
+    const localidad   = g("editLocalidad");
+    const whatsapp    = g("editWhatsapp").trim();
+    const instagram   = g("editInstagram").trim();
+    const direccion   = g("editDireccion").trim();
+    const descripcion = g("editDescripcion").trim();
+    const apertura    = g("editApertura");
+    const cierre      = g("editCierre");
+    const dias = [...document.querySelectorAll(".dia-check-edit:checked")].map(d=>d.value);
+
+    let logoUrl = negocioActual?.logoUrl||"";
+    const logoFile = document.getElementById("editLogo")?.files?.[0];
+    if (logoFile) {
+      if(btn) btn.textContent="Subiendo logo...";
+      try {
+        const fd = new FormData();
+        fd.append("file",logoFile); fd.append("upload_preset",CLOUDINARY_PRESET); fd.append("folder","punto-chaco/logos");
+        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{method:"POST",body:fd});
+        const data = await res.json();
+        if(data.secure_url) logoUrl=data.secure_url;
+      } catch(le) { mostrarToast("No se pudo subir el logo, se guardó el resto.","error"); }
+    }
+
+    if(btn) btn.textContent="Guardando...";
+
+    const slug = (nombre||"negocio").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+    const datos = { nombre, localidad, whatsapp, instagram, direccion, descripcion, logoUrl, slug,
+      horarios:{dias,apertura,cierre}, actualizadoEn:new Date().toISOString() };
+
+    await updateDoc(doc(db,"negocios",negocioActual.id), datos);
+    negocioActual = { ...negocioActual, ...datos };
+    window.negocioActual = negocioActual;
+
+    const nt = document.getElementById("negNombreTop");
+    if(nt) nt.textContent=nombre||"Mi negocio";
+
+    if(logoUrl) {
+      const av=document.getElementById("perfilAvatarImg");
+      if(av) av.style.backgroundImage=`url('${logoUrl}')`;
+    }
+    mostrarToast("¡Datos guardados correctamente!","ok");
+  } catch(err) { mostrarToast("Error: "+err.message,"error"); }
+
+  if(btn) {
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg> Guardar cambios';
+  }
+};
+
+// ── TURNOS CONFIG ──
+window.guardarConfigTurnos = async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById("btnGuardarTurnos");
+  if(btn) { btn.disabled=true; btn.textContent="Guardando..."; }
+  try {
+    const diasTurno = [...document.querySelectorAll(".dia-check-turno:checked")].map(d=>d.value);
+    const datos = {
+      negocioId: negocioActual.id,
+      diasDisponibles: diasTurno,
+      horaInicio: document.getElementById("turnoHoraInicio")?.value||"09:00",
+      horaFin:    document.getElementById("turnoHoraFin")?.value||"18:00",
+      duracion:   Number(document.getElementById("turnoDuracion")?.value)||60,
+      maxPorDia:  Number(document.getElementById("turnoMaxDia")?.value)||8,
+      activo:     document.getElementById("agendaActiva")?.checked||false,
+      actualizadoEn: new Date().toISOString()
+    };
+    await setDoc(doc(db,"configTurnos",negocioActual.id), datos);
+    await updateDoc(doc(db,"negocios",negocioActual.id), {tieneTurnos:datos.activo});
+    mostrarToast("Configuración guardada ✓","ok");
+    await cargarTurnosRecibidos();
+  } catch(err) { mostrarToast("Error: "+err.message,"error"); }
+  if(btn) { btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg> Guardar configuración'; }
+};
+
+async function cargarConfigTurnos() {
+  if (!negocioActual?.id) return;
+  try {
+    const snap = await getDoc(doc(db,"configTurnos",negocioActual.id));
+    if (snap.exists()) {
+      const cfg = snap.data();
+      const el = id => document.getElementById(id);
+      if(el("agendaActiva"))    el("agendaActiva").checked    = cfg.activo||false;
+      if(el("turnoDuracion"))   el("turnoDuracion").value     = cfg.duracion||60;
+      if(el("turnoMaxDia"))     el("turnoMaxDia").value       = cfg.maxPorDia||8;
+      if(el("turnoHoraInicio")) el("turnoHoraInicio").value   = cfg.horaInicio||"09:00";
+      if(el("turnoHoraFin"))    el("turnoHoraFin").value      = cfg.horaFin||"18:00";
+      document.querySelectorAll(".dia-check-turno").forEach(cb => {
+        cb.checked = (cfg.diasDisponibles||[]).includes(cb.value);
+      });
+    }
+  } catch(e) {}
+  await cargarTurnosRecibidos();
+}
+
+async function cargarTurnosRecibidos() {
+  if (!negocioActual?.id) return;
+  const lista = document.getElementById("listaTurnos");
+  if (!lista) return;
+  try {
+    const q = query(collection(db,"turnos"), where("negocioId","==",negocioActual.id));
+    const snap = await getDocs(q);
+
+    // Stats de citas
+    const total = snap.size;
+    const pendientes = snap.docs.filter(d=>d.data().estado==="pendiente").length;
+    const s = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+    s("turnosTotalCount", total);
+    s("turnosPendCount",  pendientes);
+
+    if (snap.empty) {
+      lista.innerHTML=`<div style="text-align:center;padding:32px;color:var(--texto-3);font-size:14px;"><p>Todavía no recibiste ningún turno.</p></div>`;
+      return;
+    }
+    const turnos = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.fecha+a.horario).localeCompare(b.fecha+b.horario));
+    const badgeColors = { confirmado:"var(--verde)", cancelado:"var(--error)", pendiente:"#FF9500" };
+    const badgeBgs    = { confirmado:"var(--verde-suave)", cancelado:"rgba(255,59,59,0.1)", pendiente:"#FFF3E0" };
+    lista.innerHTML = turnos.map(t => {
+      const f = new Date(t.fecha+"T12:00:00");
+      const fl = f.toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"short"});
+      const est = t.estado||"pendiente";
+      const wa  = t.clienteTel?(t.clienteTel.replace(/\D/g,"")):"";
+      return `<div class="turno-item">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="turno-hora"><div class="turno-hora-num">${t.horario}</div><div class="turno-hora-fecha">${fl}</div></div>
+          <div>
+            <div style="font-size:14px;font-weight:700;">${t.clienteNombre}</div>
+            <div style="font-size:12px;color:var(--texto-3);">${t.clienteTel}</div>
+            ${t.clienteNota?`<div style="font-size:12px;color:var(--texto-2);font-style:italic;">"${t.clienteNota}"</div>`:""}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;background:${badgeBgs[est]||badgeBgs.pendiente};color:${badgeColors[est]||badgeColors.pendiente};">${est}</span>
+          ${wa?`<a href="https://wa.me/${wa}" target="_blank" style="width:32px;height:32px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+            <svg viewBox="0 0 24 24" fill="white" width="15" height="15"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+          </a>`:""}
+        </div>
+      </div>`;
+    }).join("");
+  } catch(e) {
+    if(lista) lista.innerHTML=`<div style="padding:16px;color:var(--error);font-size:13px;">Error: ${e.message}</div>`;
+  }
+}
+
+// ── STOCK ──
+window.abrirModalStock = function(id=null) {
+  if (!id && stockItems.length>=10) {
+    mostrarToast("Límite de 10 productos. Usá PuntoStock para más.","error"); return;
+  }
+  document.getElementById("modalStock").style.display="flex";
+  document.getElementById("modalStockTitulo").textContent = id?"Editar producto":"Agregar al stock";
+  document.getElementById("stockId").value = id||"";
+  if (id) {
+    const item = stockItems.find(x=>x.id===id);
+    if(item) {
+      const g=i=>document.getElementById(i);
+      if(g("stockNombre"))   g("stockNombre").value=item.nombre||"";
+      if(g("stockCantidad")) g("stockCantidad").value=item.cantidad||0;
+      if(g("stockPrecio"))   g("stockPrecio").value=item.precio||0;
+      if(g("stockCat"))      g("stockCat").value=item.categoria||"";
+      if(g("stockNota"))     g("stockNota").value=item.nota||"";
+      if(g("stockVendido"))  g("stockVendido").value=0;
+      if(g("stockIngreso"))  g("stockIngreso").value=0;
+    }
+  } else {
+    const f=document.getElementById("formStock"); if(f) f.reset();
+  }
+};
+
+window.cerrarModalStock = () => { document.getElementById("modalStock").style.display="none"; };
+
+window.guardarStock = async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById("btnGuardarStock");
+  if(btn) { btn.disabled=true; btn.textContent="Guardando..."; }
+  const g = id => document.getElementById(id)?.value||"";
+  const id        = g("stockId");
+  const nombre    = g("stockNombre").trim();
+  const cantidad  = Number(g("stockCantidad"))||0;
+  const precio    = Number(g("stockPrecio"))||0;
+  const categoria = g("stockCat");
+  const nota      = g("stockNota").trim();
+  const vendido   = Number(g("stockVendido"))||0;
+  const ingreso   = Number(g("stockIngreso"))||0;
+  if (!nombre) { mostrarToast("Ingresá el nombre","error"); if(btn){btn.disabled=false;btn.textContent="Guardar";} return; }
+  try {
+    const datos = { nombre,cantidad,precio,categoria,nota,
+      negocioId:negocioActual.id,propietarioId:usuarioActual.uid,
+      actualizadoEn:new Date().toISOString() };
+    if (id) {
+      const ex=stockItems.find(x=>x.id===id);
+      datos.ingresos=(ex?.ingresos||0)+ingreso;
+      datos.totalVendido=(ex?.totalVendido||0)+vendido;
+      await updateDoc(doc(db,"stock",id),datos);
+    } else {
+      datos.ingresos=ingreso; datos.totalVendido=vendido;
+      datos.creadoEn=new Date().toISOString();
+      await addDoc(collection(db,"stock"),datos);
+    }
+    mostrarToast("Guardado ✓","ok");
+    window.cerrarModalStock();
+    await cargarStock();
+  } catch(err) { mostrarToast("Error: "+err.message,"error"); }
+  if(btn) { btn.disabled=false; btn.textContent="Guardar"; }
+};
+
+window.eliminarStock = async function(id) {
+  if (!confirm("¿Eliminar este producto?")) return;
+  await deleteDoc(doc(db,"stock",id));
+  mostrarToast("Eliminado","ok");
+  await cargarStock();
+};
+
+async function cargarStock() {
+  if (!negocioActual?.id) return;
+  const tabla = document.getElementById("tablaStock"); if(!tabla) return;
+  try {
+    const q = query(collection(db,"stock"),where("negocioId","==",negocioActual.id));
+    const snap = await getDocs(q);
+    stockItems = snap.docs.map(d=>({id:d.id,...d.data()}));
+    const total    = stockItems.length;
+    const valor    = stockItems.reduce((s,i)=>s+(i.precio||0)*(i.cantidad||0),0);
+    const ingresos = stockItems.reduce((s,i)=>s+(i.ingresos||0),0);
+    const s = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+    s("stockTotal",    total);
+    s("stockContador", `(${total}/10)`);
+    s("stockValor",    "$"+valor.toLocaleString("es-AR"));
+    s("stockIngresos", "$"+ingresos.toLocaleString("es-AR"));
+    const btnSt=document.getElementById("btnNuevoStock");
+    if(btnSt) btnSt.disabled=total>=10;
+
+    if (!stockItems.length) {
+      tabla.innerHTML=`<div style="text-align:center;padding:40px;color:var(--texto-3);">
+        <p style="font-size:14px;font-weight:600;">Tu stock está vacío</p>
+        <p style="font-size:13px;margin-top:4px;">Agregá tus primeros productos</p></div>`;
+      return;
+    }
+    tabla.innerHTML=`<table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="background:var(--fondo);">
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--texto-3);text-transform:uppercase;">Producto</th>
+        <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:var(--texto-3);text-transform:uppercase;">Stock</th>
+        <th style="padding:10px 14px;text-align:right;font-size:11px;font-weight:700;color:var(--texto-3);text-transform:uppercase;">Precio</th>
+        <th style="padding:10px 14px;text-align:right;font-size:11px;font-weight:700;color:var(--texto-3);text-transform:uppercase;">Ingresos</th>
+        <th style="padding:10px 14px;width:70px;"></th>
+      </tr></thead>
+      <tbody>${stockItems.map(item=>`
+        <tr style="border-top:1px solid var(--borde);">
+          <td style="padding:12px 14px;">
+            <div style="font-size:14px;font-weight:600;">${item.nombre}</div>
+            ${item.categoria?`<div style="font-size:11px;color:var(--texto-3);">${item.categoria}</div>`:""}
+            ${item.nota?`<div style="font-size:11px;font-style:italic;color:var(--texto-2);">"${item.nota}"</div>`:""}
+          </td>
+          <td style="padding:12px 14px;text-align:center;">
+            <span style="padding:3px 10px;border-radius:100px;font-size:12px;font-weight:700;background:${item.cantidad>0?"var(--verde-suave)":"rgba(255,59,59,0.08)"};color:${item.cantidad>0?"var(--verde)":"var(--error)"};">${item.cantidad}</span>
+          </td>
+          <td style="padding:12px 14px;text-align:right;font-size:14px;font-weight:600;">${item.precio?"$"+Number(item.precio).toLocaleString("es-AR"):"-"}</td>
+          <td style="padding:12px 14px;text-align:right;font-size:14px;font-weight:700;color:var(--verde);">$${Number(item.ingresos||0).toLocaleString("es-AR")}</td>
+          <td style="padding:12px 14px;">
+            <div style="display:flex;gap:5px;justify-content:center;">
+              <button onclick="abrirModalStock('${item.id}')" style="width:28px;height:28px;border:1.5px solid var(--borde);border-radius:50%;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--texto-2);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button onclick="eliminarStock('${item.id}')" style="width:28px;height:28px;border:1.5px solid rgba(255,59,59,0.2);border-radius:50%;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--error);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`).join("")}
+      </tbody></table>`;
+  } catch(e) {
+    if(tabla) tabla.innerHTML=`<div style="padding:16px;color:var(--error);">Error: ${e.message}</div>`;
+  }
+}
+
+// ── HELPERS ──
+window.mostrarSeccion = function(id) {
+  document.querySelectorAll(".seccion").forEach(s=>s.style.display="none");
+  const sec = document.getElementById("sec-"+id);
+  if(sec) sec.style.display="block";
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("activo"));
+  const nav = document.querySelector(`[data-sec="${id}"]`);
+  if(nav) nav.classList.add("activo");
+  if (window.innerWidth<900) document.getElementById("sidebar")?.classList.remove("abierto");
+  if (id==="turnos") cargarConfigTurnos();
+  if (id==="stock")  cargarStock();
+};
+
+window.toggleSidebar = () => document.getElementById("sidebar")?.classList.toggle("abierto");
+window.cerrarSesion  = async () => { await signOut(auth); window.location.href="index.html"; };
+
+function mostrarToast(msg, tipo="ok") {
+  const t = document.getElementById("toast");
+  if(!t) return;
+  t.textContent=msg; t.className=`toast show ${tipo}`;
+  setTimeout(()=>t.className="toast",3500);
+}
+</script>
 </head>
 <body>
 
-<!-- CARGANDO -->
 <div id="cargando">
-  <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png"
-       alt="PuntoChaco" style="height:52px; margin-bottom:8px;">
+  <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco" style="height:52px;margin-bottom:8px;">
   <div class="spinner-grande"></div>
-  <p>Cargando tu panel...</p>
+  <p style="font-size:14px;color:var(--texto-3);">Cargando tu panel...</p>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <!-- MODAL PUBLICACIÓN -->
@@ -982,67 +892,46 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
   <div class="modal-box">
     <div class="modal-header">
       <h3 id="modalPubTitulo">Nueva publicación</h3>
-      <button class="btn-cerrar-modal" onclick="cerrarModalPub()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <button class="btn-cerrar-modal" onclick="cerrarModalPub()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <form id="formPub" onsubmit="guardarPublicacion(event)">
       <input type="hidden" id="pubId">
       <div class="modal-body">
-
         <div class="grupo">
-          <label>Imágenes del producto <span style="color:var(--texto-3);font-weight:400;">(hasta 3 fotos)</span></label>
+          <label>Imágenes <span style="color:var(--texto-3);font-weight:400;">(hasta 3)</span></label>
           <label class="upload-area" for="pubImagen">
             <input type="file" id="pubImagen" accept="image/*" multiple onchange="previewImgPub(this)">
-            <div id="pubImgsPreview" style="display:none; display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;"></div>
-            <p>Hacé click para subir hasta 3 imágenes</p>
+            <div id="pubImgsPreview" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:8px;justify-content:center;"></div>
+            <p>Hacé click para subir imágenes</p>
           </label>
         </div>
-
-        <div class="grupo">
-          <label for="pubTitulo">Título *</label>
-          <input type="text" id="pubTitulo" placeholder="Ej: Tarta de frutos rojos" required>
-        </div>
-
-        <div class="grupo">
-          <label for="pubDescripcion">Descripción</label>
-          <textarea id="pubDescripcion" placeholder="Describí tu producto..."></textarea>
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div class="grupo">
-            <label for="pubPrecio">Precio ($) *</label>
-            <input type="number" id="pubPrecio" placeholder="0" min="0" required>
-          </div>
-          <div class="grupo">
-            <label for="pubCategoria">Categoría *</label>
+        <div class="grupo"><label for="pubTitulo">Título *</label><input type="text" id="pubTitulo" placeholder="Nombre del producto" required></div>
+        <div class="grupo"><label for="pubDescripcion">Descripción</label><textarea id="pubDescripcion" placeholder="Describí tu producto..."></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="grupo"><label for="pubPrecio">Precio ($) *</label><input type="number" id="pubPrecio" placeholder="0" min="0" required></div>
+          <div class="grupo"><label for="pubCategoria">Categoría *</label>
             <select id="pubCategoria" required>
               <option value="">Seleccioná</option>
               <optgroup label="Productos">
-                <option>Postres</option><option>Comida rápida</option>
-                <option>Viandas</option><option>Electrónica</option>
-                <option>Petshop</option><option>Carnicería</option>
-                <option>Kiosco</option><option>Avícola</option>
-                <option>Perfumería</option><option>Manualidades</option>
-                <option>Diseño gráfico e impresiones</option>
-                <option>Música</option><option>Otros</option>
+                <option>Postres</option><option>Comida rápida</option><option>Viandas</option>
+                <option>Electrónica</option><option>Petshop</option><option>Carnicería</option>
+                <option>Kiosco</option><option>Avícola</option><option>Perfumería</option>
+                <option>Manualidades</option><option>Diseño gráfico e impresiones</option>
+                <option>Música</option><option>Otros productos</option>
               </optgroup>
               <optgroup label="Servicios">
-                <option>Barbería</option><option>Manicuría</option>
-                <option>Cosmetología</option><option>Educación</option>
-                <option>Deportes</option><option>Reparaciones</option>
-                <option>Fotografía</option><option>Marketing</option>
-                <option>Tecnología</option><option>Otros servicios</option>
+                <option>Barbería</option><option>Manicuría</option><option>Cosmetología</option>
+                <option>Educación</option><option>Deportes</option><option>Reparaciones</option>
+                <option>Fotografía</option><option>Marketing</option><option>Tecnología</option>
+                <option>Animales</option><option>Otros servicios</option>
               </optgroup>
             </select>
           </div>
         </div>
-
-        <div style="background:var(--fondo); border-radius:var(--r-sm); padding:12px; font-size:13px; color:var(--texto-3); display:flex; gap:8px; align-items:flex-start;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Las publicaciones son revisadas antes de aparecer en el marketplace.
+        <div style="background:var(--fondo);border-radius:var(--r-sm);padding:10px 12px;font-size:12px;color:var(--texto-3);display:flex;gap:7px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Las publicaciones se aprueban automáticamente si no contienen contenido prohibido.
         </div>
-
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" onclick="cerrarModalPub()">Cancelar</button>
@@ -1052,538 +941,36 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
   </div>
 </div>
 
-<!-- APP -->
-<div id="appContent">
-  <div class="layout">
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-logo">
-        <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco">
-      </div>
-
-      <div class="sidebar-user">
-        <div class="user-avatar" id="userAvatar">V</div>
-        <div class="user-info">
-          <div class="user-nombre" id="nombreUsuario">Cargando...</div>
-          <div class="user-rol">Vendedor</div>
-        </div>
-      </div>
-
-      <nav class="sidebar-nav">
-        <div class="nav-grupo-titulo">Principal</div>
-        <div class="nav-item activo" data-sec="inicio" onclick="mostrarSeccion('inicio')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Resumen
-        </div>
-        <div class="nav-item" data-sec="publicaciones" onclick="mostrarSeccion('publicaciones')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Mis publicaciones
-        </div>
-        <div class="nav-item" data-sec="negocio" onclick="mostrarSeccion('negocio')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          Mi negocio
-        </div>
-        <div class="nav-item" data-sec="turnos" onclick="mostrarSeccion('turnos')" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-          Mis turnos
-        </div>
-        <div class="nav-item" data-sec="stock" onclick="mostrarSeccion('stock')" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          Mi stock
-        </div>
-
-        <div class="nav-grupo-titulo" style="margin-top:12px;">Cuenta</div>
-        <div class="nav-item" onclick="window.location.href='index.html'">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-          Ver marketplace
-        </div>
-        <div class="nav-item" onclick="cerrarSesion()" style="color:rgba(255,100,100,0.7);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Cerrar sesión
-        </div>
-      </nav>
-    </aside>
-
-    <!-- MAIN -->
-    <div class="main-content">
-      <div class="topbar">
-        <div style="display:flex; align-items:center; gap:12px;">
-          <button class="btn-hamburger" onclick="toggleSidebar()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-          </button>
-          <div class="topbar-titulo" id="nombreNegocio">Mi negocio</div>
-          <div class="estado-badge pendiente" id="estadoNegocio">Pendiente</div>
-        </div>
-        <div class="topbar-acciones">
-          <button class="btn btn-celeste" onclick="abrirModalPub()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nueva publicación
-          </button>
-        </div>
-      </div>
-
-      <div class="content-area">
-
-        <!-- SECCIÓN INICIO -->
-        <div class="seccion" id="sec-inicio">
-          <div class="resumen-grid">
-            <div class="res-card">
-              <div class="res-icono cel">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              </div>
-              <div>
-                <div class="res-num" id="contadorPubs">0</div>
-                <div class="res-lbl">Publicaciones</div>
-              </div>
-            </div>
-            <div class="res-card">
-              <div class="res-icono ver">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              </div>
-              <div>
-                <div class="res-num" id="statLocalidad" style="font-size:16px;">-</div>
-                <div class="res-lbl">Localidad</div>
-              </div>
-            </div>
-            <div class="res-card">
-              <div class="res-icono cel">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
-              </div>
-              <div>
-                <div class="res-num" id="statCategoria" style="font-size:14px;">-</div>
-                <div class="res-lbl">Categoría</div>
-              </div>
-            </div>
-            <div class="res-card">
-              <div class="res-icono ver">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              </div>
-              <div>
-                <div class="res-num" id="statWhatsapp" style="font-size:13px;">-</div>
-                <div class="res-lbl">WhatsApp</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Límite publicaciones -->
-          <div class="limite-wrap">
-            <div class="limite-header">
-              <span class="limite-lbl">Publicaciones usadas</span>
-              <span class="limite-num" id="limitePubs">0/10</span>
-            </div>
-            <div class="barra-track">
-              <div class="barra-fill" id="barraLimite" style="width:0%"></div>
-            </div>
-          </div>
-
-          <!-- Últimas publicaciones preview -->
-          <div class="sec-titulo-wrap">
-            <div class="sec-titulo">Tus publicaciones</div>
-            <button class="btn btn-ghost btn-sm" onclick="mostrarSeccion('publicaciones')"
-              style="height:34px; padding:0 16px; font-size:13px;">Ver todas</button>
-          </div>
-          <div class="pub-grid" id="gridPublicacionesInicio"></div>
-          <div class="sin-pubs" id="sinPublicacionesInicio">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-            <h3>Todavía no publicaste nada</h3>
-            <p>Creá tu primera publicación y empezá a conectar con clientes</p>
-            <button class="btn btn-celeste" style="margin-top:16px;" onclick="abrirModalPub()">
-              Crear primera publicación
-            </button>
-          </div>
-        </div>
-
-        <!-- SECCIÓN PUBLICACIONES -->
-        <div class="seccion" id="sec-publicaciones">
-          <div class="sec-titulo-wrap">
-            <div class="sec-titulo">Mis publicaciones</div>
-            <button class="btn btn-celeste" onclick="abrirModalPub()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Nueva publicación
-            </button>
-          </div>
-          <div class="limite-wrap">
-            <div class="limite-header">
-              <span class="limite-lbl">Publicaciones usadas</span>
-              <span class="limite-num" id="limitePubs2">0/10</span>
-            </div>
-            <div class="barra-track"><div class="barra-fill" id="barraLimite2" style="width:0%"></div></div>
-          </div>
-          <div class="pub-grid" id="gridPublicaciones"></div>
-          <div class="sin-pubs" id="sinPublicaciones">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-            <h3>Todavía no publicaste nada</h3>
-            <p>Creá tu primera publicación y empezá a conectar con clientes</p>
-            <button class="btn btn-celeste" style="margin-top:16px;" onclick="abrirModalPub()">Crear primera publicación</button>
-          </div>
-        </div>
-
-        <!-- SECCIÓN MI NEGOCIO -->
-        <div class="seccion" id="sec-negocio">
-
-          <!-- PERFIL CARD -->
-          <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:24px;box-shadow:0 2px 12px rgba(42,172,226,0.06);">
-            <!-- Cover -->
-            <div style="height:90px;background:linear-gradient(135deg,var(--celeste) 0%,var(--verde) 100%);position:relative;">
-              <div style="position:absolute;bottom:-44px;left:24px;width:88px;height:88px;border-radius:var(--r-md);border:4px solid var(--blanco);overflow:hidden;background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--blanco);box-shadow:0 4px 16px rgba(0,0,0,0.15);" id="dashAvatarWrap">
-                <span id="dashAvatarLetra">?</span>
-              </div>
-            </div>
-            <!-- Info -->
-            <div style="padding:52px 24px 24px;">
-              <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                <div>
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:800;color:var(--texto);" id="dashNombre">-</div>
-                    <div id="dashVerificadoBadge" style="display:none;flex-shrink:0;">
-                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-                        <circle cx="12" cy="12" r="11" fill="#5BADD6"/>
-                        <polyline points="7 12 10.5 15.5 17 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </div>
-                  </div>
-                  <div style="font-size:13px;color:var(--texto-3);font-weight:500;" id="dashCategoria">-</div>
-                </div>
-                <!-- Stats -->
-                <div style="display:flex;gap:28px;">
-                  <div style="text-align:center;">
-                    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--celeste);" id="dashSeguidores">0</div>
-                    <div style="font-size:10px;color:var(--texto-3);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;margin-top:2px;">Seguidores</div>
-                  </div>
-                  <div style="text-align:center;">
-                    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--verde);" id="dashPubs">0</div>
-                    <div style="font-size:10px;color:var(--texto-3);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;margin-top:2px;">Publicaciones</div>
-                  </div>
-                </div>
-              </div>
-              <!-- Ver perfil público -->
-              <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--borde);">
-                <a id="linkPerfilPublico" href="negocio.html" target="_blank"
-                  style="display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--celeste);font-weight:600;text-decoration:none;padding:7px 14px;border:1.5px solid var(--celeste-claro);border-radius:100px;background:var(--celeste-suave);transition:all 0.2s;"
-                  onmouseover="this.style.background='var(--celeste)';this.style.color='white'"
-                  onmouseout="this.style.background='var(--celeste-suave)';this.style.color='var(--celeste)'">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                  Ver mi perfil público
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- FORMULARIO EDICIÓN -->
-          <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 2px 12px rgba(42,172,226,0.06);">
-            <!-- Header del formulario -->
-            <div style="padding:18px 24px;border-bottom:1.5px solid var(--borde);background:var(--fondo);display:flex;align-items:center;gap:10px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2" width="18" height="18"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              <span style="font-size:14px;font-weight:700;color:var(--texto);">Editar información del negocio</span>
-            </div>
-
-            <form id="formEditarNegocio" onsubmit="guardarDatosNegocio(event)" novalidate style="padding:24px;">
-
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                <div class="grupo">
-                  <label for="editNombre">Nombre del negocio</label>
-                  <div style="position:relative;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--texto-3);pointer-events:none;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                    <input type="text" id="editNombre" style="padding-left:38px;" placeholder="Nombre del negocio">
-                  </div>
-                </div>
-                <div class="grupo">
-                  <label for="editLocalidad">Localidad</label>
-                  <select id="editLocalidad">
-                    <option value="">Seleccioná</option>
-                    <option>Resistencia</option><option>Barranqueras</option>
-                    <option>Fontana</option><option>Puerto Vilelas</option>
-                    <option>Sáenz Peña</option><option>Villa Ángela</option>
-                    <option>Charata</option><option>General San Martín</option>
-                    <option>Castelli</option><option>Quitilipi</option>
-                    <option>Las Breñas</option><option>Otras</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                <div class="grupo">
-                  <label for="editWhatsapp">WhatsApp</label>
-                  <div style="position:relative;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--texto-3);pointer-events:none;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13"/></svg>
-                    <input type="tel" id="editWhatsapp" style="padding-left:38px;" placeholder="+54 362 ...">
-                  </div>
-                </div>
-                <div class="grupo">
-                  <label for="editInstagram">Instagram</label>
-                  <div style="position:relative;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--texto-3);pointer-events:none;"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg>
-                    <input type="text" id="editInstagram" style="padding-left:38px;" placeholder="@tunegocio">
-                  </div>
-                </div>
-              </div>
-
-              <div class="grupo">
-                <label for="editDireccion">Dirección</label>
-                <div style="position:relative;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--texto-3);pointer-events:none;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  <input type="text" id="editDireccion" style="padding-left:38px;" placeholder="Calle, número, barrio">
-                </div>
-              </div>
-
-              <div class="grupo">
-                <label for="editDescripcion">Descripción del negocio</label>
-                <textarea id="editDescripcion" placeholder="Contales a tus clientes qué ofrecés..." style="min-height:90px;"></textarea>
-              </div>
-
-              <!-- Logo upload -->
-              <div class="grupo">
-                <label>Logo del negocio</label>
-                <label for="editLogo" style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--fondo);border:1.5px dashed var(--borde-2);border-radius:var(--r-md);cursor:pointer;transition:all 0.2s;"
-                  onmouseover="this.style.borderColor='var(--celeste)';this.style.background='var(--celeste-suave)'"
-                  onmouseout="this.style.borderColor='var(--borde-2)';this.style.background='var(--fondo)'">
-                  <input type="file" id="editLogo" accept="image/*" onchange="previewEditLogo(this)" style="display:none;">
-                  <div id="editLogoPreviewWrap" style="display:none;">
-                    <img id="editLogoPreview" style="width:56px;height:56px;border-radius:var(--r-sm);object-fit:cover;border:2px solid var(--borde);" alt="Logo">
-                  </div>
-                  <div>
-                    <div style="font-size:13px;font-weight:600;color:var(--texto-2);" id="editLogoTexto">Hacé click para cambiar el logo</div>
-                    <div style="font-size:11px;color:var(--texto-3);margin-top:2px;">JPG, PNG o WEBP · Máx. 5MB</div>
-                  </div>
-                </label>
-              </div>
-
-              <!-- Horarios -->
-              <div class="grupo">
-                <label>Días de atención</label>
-                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:12px;">
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Lun"><div class="dia-inner">Lun</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Mar"><div class="dia-inner">Mar</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Mié"><div class="dia-inner">Mié</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Jue"><div class="dia-inner">Jue</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Vie"><div class="dia-inner">Vie</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Sáb"><div class="dia-inner">Sáb</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Dom"><div class="dia-inner">Dom</div></label>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                  <div class="grupo" style="margin-bottom:0;">
-                    <label style="font-size:12px;color:var(--texto-3);">Apertura</label>
-                    <input type="time" id="editApertura" value="09:00" style="padding-left:12px;">
-                  </div>
-                  <div class="grupo" style="margin-bottom:0;">
-                    <label style="font-size:12px;color:var(--texto-3);">Cierre</label>
-                    <input type="time" id="editCierre" value="18:00" style="padding-left:12px;">
-                  </div>
-                </div>
-              </div>
-
-              <div style="display:flex;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--borde);margin-top:4px;">
-                <button type="submit" class="btn btn-celeste" id="btnGuardarNegocio" style="height:44px;padding:0 28px;font-size:14px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
-                  Guardar cambios
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <!-- SECCIÓN TURNOS -->
-        <div class="seccion" id="sec-turnos">
-          <div class="sec-titulo-wrap">
-            <div class="sec-titulo">Configuración de turnos</div>
-          </div>
-
-          <!-- CONFIG AGENDA -->
-          <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;box-shadow:0 2px 12px rgba(42,172,226,0.06);">
-            <div style="padding:16px 24px;border-bottom:1.5px solid var(--borde);background:var(--fondo);display:flex;align-items:center;justify-content:space-between;">
-              <div style="display:flex;align-items:center;gap:10px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                <span style="font-size:14px;font-weight:700;color:var(--texto);">Agenda online</span>
-              </div>
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                <input type="checkbox" id="agendaActiva" onchange="toggleAgenda(this.checked)"
-                  style="width:18px;height:18px;accent-color:var(--celeste);">
-                <span style="font-size:13px;font-weight:600;color:var(--texto-2);">Activar agenda</span>
-              </label>
-            </div>
-            <form id="formTurnos" onsubmit="guardarConfigTurnos(event)" style="padding:24px;">
-
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-                <div class="grupo">
-                  <label>Duración del turno (minutos)</label>
-                  <select id="turnoDuracion">
-                    <option value="30">30 minutos</option>
-                    <option value="45">45 minutos</option>
-                    <option value="60" selected>1 hora</option>
-                    <option value="90">1 hora 30 min</option>
-                    <option value="120">2 horas</option>
-                  </select>
-                </div>
-                <div class="grupo">
-                  <label>Máximo de turnos por día</label>
-                  <select id="turnoMaxDia">
-                    <option value="2">2 turnos</option>
-                    <option value="4">4 turnos</option>
-                    <option value="6">6 turnos</option>
-                    <option value="8" selected>8 turnos</option>
-                    <option value="10">10 turnos</option>
-                    <option value="12">12 turnos</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="grupo">
-                <label>Días disponibles para turnos</label>
-                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px;">
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Lun"><div class="dia-inner">Lun</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Mar"><div class="dia-inner">Mar</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Mié"><div class="dia-inner">Mié</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Jue"><div class="dia-inner">Jue</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Vie" checked><div class="dia-inner">Vie</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Sáb"><div class="dia-inner">Sáb</div></label>
-                  <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Dom"><div class="dia-inner">Dom</div></label>
-                </div>
-              </div>
-
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                <div class="grupo">
-                  <label>Hora de inicio</label>
-                  <input type="time" id="turnoHoraInicio" value="09:00" style="padding-left:12px;">
-                </div>
-                <div class="grupo">
-                  <label>Hora de fin</label>
-                  <input type="time" id="turnoHoraFin" value="18:00" style="padding-left:12px;">
-                </div>
-              </div>
-
-              <div style="display:flex;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--borde);margin-top:4px;">
-                <button type="submit" class="btn btn-celeste" id="btnGuardarTurnos" style="height:44px;padding:0 28px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
-                  Guardar configuración
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <!-- TURNOS RECIBIDOS -->
-          <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 2px 12px rgba(42,172,226,0.06);">
-            <div style="padding:16px 24px;border-bottom:1.5px solid var(--borde);background:var(--fondo);display:flex;align-items:center;gap:10px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-              <span style="font-size:14px;font-weight:700;color:var(--texto);">Turnos recibidos</span>
-            </div>
-            <div id="listaTurnos" style="padding:16px;">
-              <div style="text-align:center;padding:32px;color:var(--texto-3);font-size:14px;">Cargando turnos...</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECCIÓN STOCK -->
-        <div class="seccion" id="sec-stock">
-          <div class="sec-titulo-wrap">
-            <div class="sec-titulo">Mi stock</div>
-          </div>
-
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;">
-            <div class="res-card">
-              <div class="res-icono cel"><svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
-              <div><div class="res-num" id="stockTotal">0</div><div class="res-lbl">Productos</div></div>
-            </div>
-            <div class="res-card">
-              <div class="res-icono ver"><svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-              <div><div class="res-num" id="stockValor" style="font-size:16px;">$0</div><div class="res-lbl">Valor en stock</div></div>
-            </div>
-            <div class="res-card">
-              <div class="res-icono ver"><svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
-              <div><div class="res-num" id="stockIngresos" style="font-size:16px;">$0</div><div class="res-lbl">Ingresos registrados</div></div>
-            </div>
-          </div>
-
-          <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px;box-shadow:0 2px 12px rgba(42,172,226,0.06);">
-            <div style="padding:14px 20px;border-bottom:1.5px solid var(--borde);background:var(--fondo);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-              <span style="font-size:14px;font-weight:700;color:var(--texto);">Productos registrados <span id="stockContador" style="font-size:12px;color:var(--texto-3);font-weight:500;">(0/10)</span></span>
-              <button onclick="abrirModalStock()" class="btn btn-celeste" id="btnNuevoStock" style="height:36px;padding:0 16px;font-size:13px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Agregar al stock
-              </button>
-            </div>
-            <div id="tablaStock" style="padding:8px;">
-              <div style="text-align:center;padding:32px;color:var(--texto-3);font-size:14px;">Cargando stock...</div>
-            </div>
-          </div>
-
-          <!-- BANNER PUNTOSTOCK -->
-          <div style="background:linear-gradient(135deg,var(--fondo-2),var(--celeste-suave));border:1.5px solid var(--celeste-claro);border-radius:var(--r-lg);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-            <div>
-              <div style="display:inline-block;padding:3px 10px;background:rgba(91,173,214,0.15);border-radius:100px;font-size:11px;font-weight:700;color:var(--celeste);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">Potenciá tu negocio</div>
-              <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:4px;">Quiero cargar más cosas al stock</div>
-              <p style="font-size:13px;color:var(--texto-2);line-height:1.5;max-width:380px;">PuntoStock te da control total del inventario, ventas, clientes y reportes — simple y a bajo costo.</p>
-            </div>
-            <a href="https://www.puntostock.com.ar" target="_blank" class="btn btn-celeste" style="flex-shrink:0;height:46px;padding:0 24px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-              Ir a PuntoStock
-            </a>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL STOCK -->
 <div class="modal-overlay" id="modalStock">
   <div class="modal-box">
     <div class="modal-header">
       <h3 id="modalStockTitulo">Agregar al stock</h3>
-      <button class="btn-cerrar-modal" onclick="cerrarModalStock()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <button class="btn-cerrar-modal" onclick="cerrarModalStock()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <form id="formStock" onsubmit="guardarStock(event)">
       <input type="hidden" id="stockId">
       <div class="modal-body">
-        <div class="grupo">
-          <label for="stockNombre">Nombre del producto *</label>
-          <input type="text" id="stockNombre" placeholder="Ej: Torta de chocolate" required>
-        </div>
+        <div class="grupo"><label for="stockNombre">Producto *</label><input type="text" id="stockNombre" placeholder="Nombre del producto" required></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div class="grupo">
-            <label for="stockCantidad">Cantidad en stock</label>
-            <input type="number" id="stockCantidad" placeholder="0" min="0" value="1">
-          </div>
-          <div class="grupo">
-            <label for="stockPrecio">Precio unitario ($)</label>
-            <input type="number" id="stockPrecio" placeholder="0" min="0">
-          </div>
+          <div class="grupo"><label for="stockCantidad">Cantidad</label><input type="number" id="stockCantidad" placeholder="0" min="0" value="1"></div>
+          <div class="grupo"><label for="stockPrecio">Precio ($)</label><input type="number" id="stockPrecio" placeholder="0" min="0"></div>
         </div>
-        <div class="grupo">
-          <label for="stockCategoria">Categoría</label>
-          <select id="stockCategoria">
+        <div class="grupo"><label for="stockCat">Categoría</label>
+          <select id="stockCat">
             <option value="">Sin categoría</option>
-            <option>Postres</option><option>Comida rápida</option>
-            <option>Viandas</option><option>Electrónica</option>
-            <option>Petshop</option><option>Carnicería</option>
-            <option>Kiosco</option><option>Avícola</option>
-            <option>Perfumería</option><option>Manualidades</option>
-            <option>Música</option><option>Otros</option>
+            <option>Postres</option><option>Comida rápida</option><option>Viandas</option>
+            <option>Electrónica</option><option>Petshop</option><option>Carnicería</option>
+            <option>Kiosco</option><option>Avícola</option><option>Perfumería</option>
+            <option>Manualidades</option><option>Música</option><option>Otros</option>
           </select>
         </div>
-        <div class="grupo">
-          <label for="stockNota">Nota (opcional)</label>
-          <textarea id="stockNota" placeholder="Descripción o detalle del producto..." style="height:60px;"></textarea>
-        </div>
-
-        <!-- Registrar ingreso -->
-        <div style="background:var(--verde-suave);border:1.5px solid rgba(58,143,90,0.2);border-radius:var(--r-sm);padding:14px 16px;margin-top:4px;">
-          <div style="font-size:13px;font-weight:700;color:var(--verde);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
-            Registrar ingreso (opcional)
-          </div>
+        <div class="grupo"><label for="stockNota">Nota</label><textarea id="stockNota" placeholder="Descripción..." style="height:60px;"></textarea></div>
+        <div style="background:var(--verde-suave);border:1.5px solid rgba(58,143,90,0.2);border-radius:var(--r-sm);padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--verde);margin-bottom:10px;">Registrar ingreso (opcional)</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div class="grupo" style="margin-bottom:0;">
-              <label style="font-size:12px;">Cantidad vendida</label>
-              <input type="number" id="stockVendido" placeholder="0" min="0" value="0">
-            </div>
-            <div class="grupo" style="margin-bottom:0;">
-              <label style="font-size:12px;">Total cobrado ($)</label>
-              <input type="number" id="stockIngreso" placeholder="0" min="0" value="0">
-            </div>
+            <div class="grupo" style="margin-bottom:0;"><label style="font-size:12px;">Cantidad vendida</label><input type="number" id="stockVendido" placeholder="0" min="0" value="0"></div>
+            <div class="grupo" style="margin-bottom:0;"><label style="font-size:12px;">Total cobrado ($)</label><input type="number" id="stockIngreso" placeholder="0" min="0" value="0"></div>
           </div>
         </div>
       </div>
@@ -1594,222 +981,312 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
     </form>
   </div>
 </div>
-    const observer = new MutationObserver(() => {
-      if (window.negocioActual) rellenarFormEdicion(window.negocioActual);
-    });
-    observer.observe(document.getElementById('appContent'), { attributes: true, childList: true, subtree: true });
-  });
 
-  function rellenarFormEdicion(n) {
-    const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
-    set('editNombre', n.nombre);
-    set('editLocalidad', n.localidad);
-    set('editWhatsapp', n.whatsapp);
-    set('editInstagram', n.instagram);
-    set('editDireccion', n.direccion);
-    set('editDescripcion', n.descripcion);
-    set('editApertura', n.horarios?.apertura || '09:00');
-    set('editCierre', n.horarios?.cierre || '18:00');
+<!-- APP -->
+<div id="appContent">
+<div class="layout">
 
-    // Días
-    document.querySelectorAll('.dia-check-edit').forEach(cb => {
-      cb.checked = (n.horarios?.dias || []).includes(cb.value);
-    });
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco"></div>
+  <div class="sidebar-user">
+    <div class="user-avatar-wrap" id="sidebarAvatar">V</div>
+    <div>
+      <div class="user-nombre" id="userNombreTop">Cargando...</div>
+      <div class="user-rol">Vendedor</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-grupo-titulo">Principal</div>
+    <div class="nav-item activo" data-sec="inicio" onclick="mostrarSeccion('inicio')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Resumen
+    </div>
+    <div class="nav-item" data-sec="publicaciones" onclick="mostrarSeccion('publicaciones')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Publicaciones
+    </div>
+    <div class="nav-item" id="navTurnos" data-sec="turnos" onclick="mostrarSeccion('turnos')" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Mis turnos
+    </div>
+    <div class="nav-item" id="navStock" data-sec="stock" onclick="mostrarSeccion('stock')" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Mi stock
+    </div>
+    <div class="nav-item" data-sec="negocio" onclick="mostrarSeccion('negocio')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Mi negocio
+    </div>
+    <div class="nav-grupo-titulo" style="margin-top:8px;">Cuenta</div>
+    <div class="nav-item" onclick="window.location.href='index.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Ver marketplace
+    </div>
+    <div class="nav-item" onclick="cerrarSesion()" style="color:rgba(255,100,100,0.7);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Cerrar sesión
+    </div>
+  </nav>
+</aside>
 
-    // Avatar
-    const wrap = document.getElementById('dashAvatarWrap');
-    const letra = document.getElementById('dashAvatarLetra');
-    if (n.logoUrl) {
-      wrap.style.backgroundImage = `url('${n.logoUrl}')`;
-      if(letra) letra.style.display = 'none';
-    } else {
-      if(letra) letra.textContent = (n.nombre||'?')[0].toUpperCase();
-    }
+<!-- MAIN -->
+<div class="main-content">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="btn-hamburger" onclick="toggleSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="topbar-titulo" id="negNombreTop">Mi negocio</div>
+      <div class="estado-badge pendiente" id="estNegocio">Pendiente</div>
+    </div>
+    <button class="btn btn-celeste" onclick="abrirModalPub()" style="height:38px;padding:0 18px;font-size:13px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nueva publicación
+    </button>
+  </div>
 
-    // Info
-    const dashNombre = document.getElementById('dashNombre');
-    const dashCat    = document.getElementById('dashCategoria');
-    if(dashNombre) dashNombre.textContent = n.nombre || '-';
-    if(dashCat)    dashCat.textContent    = n.categoria || '-';
+  <div class="content-area">
 
-    // Badge verificado
-    const badge = document.getElementById('dashVerificadoBadge');
-    if(badge) badge.style.display = n.verificado ? 'inline-flex' : 'none';
+    <!-- INICIO -->
+    <div class="seccion" id="sec-inicio" style="display:block;">
+      <div class="resumen-grid">
+        <div class="res-card">
+          <div class="res-icono cel"><svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div><div class="res-num" id="contadorPubs">0</div><div class="res-lbl">Publicaciones</div></div>
+        </div>
+        <div class="res-card">
+          <div class="res-icono ver"><svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <div><div class="res-num" id="statLocalidad" style="font-size:15px;">-</div><div class="res-lbl">Localidad</div></div>
+        </div>
+        <div class="res-card">
+          <div class="res-icono cel"><svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg></div>
+          <div><div class="res-num" id="statCategoria" style="font-size:13px;">-</div><div class="res-lbl">Categoría</div></div>
+        </div>
+        <div class="res-card">
+          <div class="res-icono ver"><svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13"/></svg></div>
+          <div><div class="res-num" id="statWa" style="font-size:12px;">-</div><div class="res-lbl">WhatsApp</div></div>
+        </div>
+      </div>
+      <div class="limite-wrap">
+        <div class="limite-header"><span class="limite-lbl">Publicaciones este mes</span><span class="limite-num" id="limitePubs">0/15</span></div>
+        <div class="barra-track"><div class="barra-fill" id="barraLimite" style="width:0%"></div></div>
+      </div>
+      <div class="sec-titulo-wrap">
+        <div class="sec-titulo">Tus publicaciones</div>
+        <button class="btn btn-ghost" onclick="mostrarSeccion('publicaciones')" style="height:34px;padding:0 14px;font-size:13px;">Ver todas</button>
+      </div>
+      <div class="pub-grid" id="gridPublicacionesHome"></div>
+      <div class="sin-pubs" id="sinPublicacionesHome">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        <h3>Sin publicaciones aún</h3><p>Creá tu primera publicación</p>
+        <button class="btn btn-celeste" style="margin-top:16px;" onclick="abrirModalPub()">Crear publicación</button>
+      </div>
+    </div>
 
-    // Link perfil público
-    const linkPerfil = document.getElementById('linkPerfilPublico');
-    if(linkPerfil && n.slug) linkPerfil.href = `negocio.html?slug=${n.slug}`;
+    <!-- PUBLICACIONES -->
+    <div class="seccion" id="sec-publicaciones">
+      <div class="sec-titulo-wrap">
+        <div class="sec-titulo">Mis publicaciones</div>
+        <button class="btn btn-celeste" onclick="abrirModalPub()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nueva
+        </button>
+      </div>
+      <div class="limite-wrap">
+        <div class="limite-header"><span class="limite-lbl">Publicaciones este mes</span><span class="limite-num" id="limitePubs2">0/15</span></div>
+        <div class="barra-track"><div class="barra-fill" id="barraLimite2" style="width:0%"></div></div>
+      </div>
+      <div class="pub-grid" id="gridPublicaciones"></div>
+      <div class="sin-pubs" id="sinPublicaciones">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <h3>Sin publicaciones</h3><p>Creá tu primera publicación</p>
+        <button class="btn btn-celeste" style="margin-top:16px;" onclick="abrirModalPub()">Crear publicación</button>
+      </div>
+    </div>
 
-    // Logo preview
-    if (n.logoUrl) {
-      const prev = document.getElementById('editLogoPreview');
-      const wrap2 = document.getElementById('editLogoPreviewWrap');
-      const txt = document.getElementById('editLogoTexto');
-      if(prev) prev.src = n.logoUrl;
-      if(wrap2) wrap2.style.display = 'block';
-      if(txt) txt.textContent = 'Hacé click para cambiar el logo';
-    }
+    <!-- MI NEGOCIO -->
+    <div class="seccion" id="sec-negocio">
+      <div class="sec-titulo-wrap"><div class="sec-titulo">Mi negocio</div></div>
+      <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;box-shadow:var(--sombra);">
+        <div class="perfil-cover"></div>
+        <div style="padding:0 20px 20px;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:-40px;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+            <div id="perfilAvatarImg" class="perfil-avatar"><span id="perfilAvatarLetra">?</span></div>
+            <div style="display:flex;gap:16px;padding-bottom:4px;">
+              <div style="text-align:center;"><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--celeste);" id="dashSeguidores">0</div><div style="font-size:10px;color:var(--texto-3);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Seguidores</div></div>
+              <div style="text-align:center;"><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--verde);" id="dashPubs">0</div><div style="font-size:10px;color:var(--texto-3);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Publicaciones</div></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;" id="dashNombreNegocio">-</div>
+            <div id="dashVerBadge" style="display:none;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none"><circle cx="12" cy="12" r="11" fill="#5BADD6"/><polyline points="7 12 10.5 15.5 17 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div style="font-size:13px;color:var(--texto-3);" id="dashCatNegocio">-</div>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--borde);">
+            <a id="linkPerfilPublico" href="negocio.html" target="_blank" style="display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--celeste);font-weight:600;text-decoration:none;padding:6px 14px;border:1.5px solid var(--celeste-claro);border-radius:100px;background:var(--celeste-suave);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Ver perfil público
+            </a>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sombra);">
+        <div style="padding:14px 20px;border-bottom:1.5px solid var(--borde);background:var(--fondo);display:flex;align-items:center;gap:10px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2" width="17" height="17"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <span style="font-size:14px;font-weight:700;">Editar información</span>
+        </div>
+        <form id="formEditarNegocio" onsubmit="guardarDatosNegocio(event)" style="padding:22px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="grupo"><label for="editNombre">Nombre del negocio</label><input type="text" id="editNombre" placeholder="Nombre"></div>
+            <div class="grupo"><label for="editLocalidad">Localidad</label>
+              <select id="editLocalidad">
+                <option value="">Seleccioná</option>
+                <option>Resistencia</option><option>Barranqueras</option><option>Fontana</option>
+                <option>Puerto Vilelas</option><option>Sáenz Peña</option><option>Villa Ángela</option>
+                <option>Charata</option><option>General San Martín</option><option>Castelli</option>
+                <option>Quitilipi</option><option>Las Breñas</option><option>Otras</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="grupo"><label for="editWhatsapp">WhatsApp</label><input type="text" id="editWhatsapp" placeholder="+54 362 ..."></div>
+            <div class="grupo"><label for="editInstagram">Instagram</label><input type="text" id="editInstagram" placeholder="@tunegocio"></div>
+          </div>
+          <div class="grupo"><label for="editDireccion">Dirección</label><input type="text" id="editDireccion" placeholder="Calle, número, barrio"></div>
+          <div class="grupo"><label for="editDescripcion">Descripción</label><textarea id="editDescripcion" placeholder="Describí tu negocio..."></textarea></div>
+          <div class="grupo">
+            <label>Logo del negocio</label>
+            <label for="editLogo" style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--fondo);border:1.5px dashed var(--borde-2);border-radius:var(--r-md);cursor:pointer;">
+              <input type="file" id="editLogo" accept="image/*" onchange="previewEditLogo(this)" style="display:none;">
+              <div id="editLogoPreviewWrap" style="display:none;"><img id="editLogoPreview" style="width:52px;height:52px;border-radius:8px;object-fit:cover;" alt="Logo"></div>
+              <div><div style="font-size:13px;font-weight:600;color:var(--texto-2);" id="editLogoTexto">Hacé click para cambiar el logo</div><div style="font-size:11px;color:var(--texto-3);margin-top:2px;">JPG, PNG o WEBP · Máx. 5MB</div></div>
+            </label>
+          </div>
+          <div class="grupo">
+            <label>Días de atención</label>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:10px;">
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Lun"><div class="dia-inner">Lun</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Mar"><div class="dia-inner">Mar</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Mié"><div class="dia-inner">Mié</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Jue"><div class="dia-inner">Jue</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Vie"><div class="dia-inner">Vie</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Sáb"><div class="dia-inner">Sáb</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Dom"><div class="dia-inner">Dom</div></label>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="grupo" style="margin-bottom:0;"><label style="font-size:12px;">Apertura</label><input type="time" id="editApertura" value="09:00"></div>
+              <div class="grupo" style="margin-bottom:0;"><label style="font-size:12px;">Cierre</label><input type="time" id="editCierre" value="18:00"></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;padding-top:14px;border-top:1px solid var(--borde);">
+            <button type="submit" class="btn btn-celeste" id="btnGuardarNegocio" style="height:44px;padding:0 28px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+              Guardar cambios
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
-    // Seguidores
-    const segs = document.getElementById('dashSeguidores');
-    const sigs = document.getElementById('dashSiguiendo');
-    const pubs = document.getElementById('dashPubs');
-    if(segs) segs.textContent = n.seguidores || 0;
-    if(sigs) sigs.textContent = n.siguiendo  || 0;
-    if(pubs) pubs.textContent = window.publicaciones?.length || 0;
+    <!-- TURNOS -->
+    <div class="seccion" id="sec-turnos">
+      <div class="sec-titulo-wrap"><div class="sec-titulo">Gestión de turnos</div></div>
+      <!-- Stats turnos -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+        <div class="res-card">
+          <div class="res-icono cel"><svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+          <div><div class="res-num" id="turnosTotalCount">0</div><div class="res-lbl">Turnos totales</div></div>
+        </div>
+        <div class="res-card">
+          <div class="res-icono ver"><svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div><div class="res-num" id="turnosPendCount">0</div><div class="res-lbl">Pendientes</div></div>
+        </div>
+      </div>
+      <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;box-shadow:var(--sombra);">
+        <div style="padding:14px 20px;border-bottom:1.5px solid var(--borde);background:var(--fondo);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:14px;font-weight:700;">Configuración de agenda</span>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="agendaActiva" style="width:18px;height:18px;accent-color:var(--celeste);">
+            <span style="font-size:13px;font-weight:600;color:var(--texto-2);">Activar agenda</span>
+          </label>
+        </div>
+        <form id="formTurnos" onsubmit="guardarConfigTurnos(event)" style="padding:22px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+            <div class="grupo"><label>Duración del turno</label>
+              <select id="turnoDuracion"><option value="30">30 minutos</option><option value="45">45 minutos</option><option value="60" selected>1 hora</option><option value="90">1h 30min</option><option value="120">2 horas</option></select>
+            </div>
+            <div class="grupo"><label>Máx. turnos por día</label>
+              <select id="turnoMaxDia"><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8" selected>8</option><option value="10">10</option><option value="12">12</option><option value="20">Sin límite (~20)</option></select>
+            </div>
+          </div>
+          <div class="grupo">
+            <label>Días disponibles</label>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px;">
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Lun"><div class="dia-inner">Lun</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Mar"><div class="dia-inner">Mar</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Mié"><div class="dia-inner">Mié</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Jue"><div class="dia-inner">Jue</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Vie" checked><div class="dia-inner">Vie</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Sáb"><div class="dia-inner">Sáb</div></label>
+              <label class="dia-toggle"><input type="checkbox" class="dia-check-turno" value="Dom"><div class="dia-inner">Dom</div></label>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="grupo"><label>Hora inicio</label><input type="time" id="turnoHoraInicio" value="09:00"></div>
+            <div class="grupo"><label>Hora fin</label><input type="time" id="turnoHoraFin" value="18:00"></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;padding-top:14px;border-top:1px solid var(--borde);">
+            <button type="submit" class="btn btn-celeste" id="btnGuardarTurnos" style="height:44px;padding:0 28px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+              Guardar configuración
+            </button>
+          </div>
+        </form>
+      </div>
+      <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sombra);">
+        <div style="padding:14px 20px;border-bottom:1.5px solid var(--borde);background:var(--fondo);">
+          <span style="font-size:14px;font-weight:700;">Turnos recibidos</span>
+          <span style="font-size:12px;color:var(--texto-3);margin-left:8px;">(las agendas de citas son ilimitadas)</span>
+        </div>
+        <div id="listaTurnos" style="padding:16px;"><div style="text-align:center;padding:24px;color:var(--texto-3);">Cargando...</div></div>
+      </div>
+    </div>
 
-    // Cargar stock si es de productos
-    const SERVICIOS = ['Barbería','Manicuría','Cosmetología','Tratamientos de piel',
-      'Educación','Animales','Deportes','Entrenamiento personal','Reparaciones',
-      'Fotografía','Diseño','Marketing','Tecnología','Otros servicios'];
-    if (!SERVICIOS.includes(n.categoria)) cargarStock();
-  }
+    <!-- STOCK -->
+    <div class="seccion" id="sec-stock">
+      <div class="sec-titulo-wrap"><div class="sec-titulo">Mi stock</div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;">
+        <div class="res-card">
+          <div class="res-icono cel"><svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <div><div class="res-num" id="stockTotal">0</div><div class="res-lbl">Productos <span id="stockContador" style="font-size:10px;color:var(--texto-3);">(0/10)</span></div></div>
+        </div>
+        <div class="res-card">
+          <div class="res-icono ver"><svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div><div class="res-num" id="stockValor" style="font-size:16px;">$0</div><div class="res-lbl">Valor en stock</div></div>
+        </div>
+        <div class="res-card">
+          <div class="res-icono ver"><svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+          <div><div class="res-num" id="stockIngresos" style="font-size:16px;">$0</div><div class="res-lbl">Ingresos</div></div>
+        </div>
+      </div>
+      <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px;box-shadow:var(--sombra);">
+        <div style="padding:14px 20px;border-bottom:1.5px solid var(--borde);background:var(--fondo);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:14px;font-weight:700;">Productos registrados</span>
+          <button onclick="abrirModalStock()" class="btn btn-celeste" id="btnNuevoStock" style="height:36px;padding:0 16px;font-size:13px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Agregar al stock
+          </button>
+        </div>
+        <div id="tablaStock" style="padding:8px;"></div>
+      </div>
+      <div style="background:linear-gradient(135deg,var(--fondo-2),var(--celeste-suave));border:1.5px solid var(--celeste-claro);border-radius:var(--r-lg);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--celeste);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Potenciá tu negocio</div>
+          <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:4px;">Quiero cargar más cosas al stock</div>
+          <p style="font-size:13px;color:var(--texto-2);max-width:360px;line-height:1.5;">PuntoStock te da control total del inventario, ventas y clientes — simple y a bajo costo.</p>
+        </div>
+        <a href="https://www.puntostock.com.ar" target="_blank" class="btn btn-celeste" style="flex-shrink:0;height:44px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Ir a PuntoStock
+        </a>
+      </div>
+    </div>
 
-  // ── STOCK ──
-  let stockItems = [];
+  </div>
+</div>
+</div>
+</div>
 
-  window.abrirModalStock = function(id = null) {
-    if (!id && stockItems.length >= 10) {
-      mostrarToast("Límite de 10 productos. Usá PuntoStock para más.", "error");
-      return;
-    }
-    document.getElementById("modalStock").style.display = "flex";
-    document.getElementById("modalStockTitulo").textContent = id ? "Editar producto" : "Agregar al stock";
-    document.getElementById("stockId").value = id || "";
-    if (id) {
-      const item = stockItems.find(x => x.id === id);
-      if (item) {
-        const s = id => document.getElementById(id);
-        if(s('stockNombre'))   s('stockNombre').value   = item.nombre || "";
-        if(s('stockCantidad')) s('stockCantidad').value = item.cantidad || 0;
-        if(s('stockPrecio'))   s('stockPrecio').value   = item.precio || 0;
-        if(s('stockCategoria')) s('stockCategoria').value = item.categoria || "";
-        if(s('stockNota'))     s('stockNota').value     = item.nota || "";
-        if(s('stockVendido'))  s('stockVendido').value  = 0;
-        if(s('stockIngreso'))  s('stockIngreso').value  = 0;
-      }
-    } else {
-      const f = document.getElementById("formStock");
-      if(f) f.reset();
-    }
-  };
-
-  window.cerrarModalStock = function() {
-    const m = document.getElementById("modalStock");
-    if(m) m.style.display = "none";
-  };
-
-  window.guardarStock = async function(e) {
-    e.preventDefault();
-    const btn = document.getElementById("btnGuardarStock");
-    if(btn) { btn.disabled = true; btn.textContent = "Guardando..."; }
-
-    const g = id => document.getElementById(id)?.value;
-    const nombre    = (g("stockNombre") || "").trim();
-    const cantidad  = Number(g("stockCantidad")) || 0;
-    const precio    = Number(g("stockPrecio")) || 0;
-    const categoria = g("stockCategoria") || "";
-    const nota      = (g("stockNota") || "").trim();
-    const vendido   = Number(g("stockVendido")) || 0;
-    const ingreso   = Number(g("stockIngreso")) || 0;
-    const id        = g("stockId");
-
-    if (!nombre) { mostrarToast("Ingresá el nombre del producto", "error"); if(btn){btn.disabled=false;btn.textContent="Guardar";} return; }
-
-    try {
-      const datos = { nombre, cantidad, precio, categoria, nota,
-        negocioId: negocioActual.id, propietarioId: usuarioActual.uid,
-        actualizadoEn: new Date().toISOString() };
-
-      if (id) {
-        const existing = stockItems.find(x => x.id === id);
-        datos.ingresos     = (existing?.ingresos || 0) + ingreso;
-        datos.totalVendido = (existing?.totalVendido || 0) + vendido;
-        await updateDoc(doc(db, "stock", id), datos);
-      } else {
-        datos.ingresos = ingreso; datos.totalVendido = vendido;
-        datos.creadoEn = new Date().toISOString();
-        await addDoc(collection(db, "stock"), datos);
-      }
-      mostrarToast("Guardado ✓", "ok");
-      cerrarModalStock();
-      await cargarStock();
-    } catch(err) { mostrarToast("Error: " + err.message, "error"); }
-    if(btn) { btn.disabled = false; btn.textContent = "Guardar"; }
-  };
-
-  window.eliminarStock = async function(id) {
-    if (!confirm("¿Eliminar este producto?")) return;
-    await deleteDoc(doc(db, "stock", id));
-    mostrarToast("Producto eliminado", "ok");
-    await cargarStock();
-  };
-
-  async function cargarStock() {
-    if (!negocioActual?.id) return;
-    const tabla = document.getElementById("tablaStock");
-    if (!tabla) return;
-    try {
-      const q = query(collection(db, "stock"), where("negocioId", "==", negocioActual.id));
-      const snap = await getDocs(q);
-      stockItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      const total    = stockItems.length;
-      const valor    = stockItems.reduce((s,i) => s + (i.precio||0) * (i.cantidad||0), 0);
-      const ingresos = stockItems.reduce((s,i) => s + (i.ingresos||0), 0);
-
-      const st = id => document.getElementById(id);
-      if(st("stockTotal"))    st("stockTotal").textContent    = total;
-      if(st("stockContador")) st("stockContador").textContent = `(${total}/10)`;
-      if(st("stockValor"))    st("stockValor").textContent    = "$" + valor.toLocaleString("es-AR");
-      if(st("stockIngresos")) st("stockIngresos").textContent = "$" + ingresos.toLocaleString("es-AR");
-
-      const btnSt = document.getElementById("btnNuevoStock");
-      if(btnSt) { btnSt.disabled = total >= 10; }
-
-      if (!stockItems.length) {
-        tabla.innerHTML = `<div style="text-align:center;padding:40px;color:var(--texto-3);">
-          <p style="font-size:14px;font-weight:600;">Tu stock está vacío</p>
-          <p style="font-size:13px;margin-top:4px;">Agregá tus primeros productos</p></div>`;
-        return;
-      }
-
-      tabla.innerHTML = `<table style="width:100%;border-collapse:collapse;">
-        <thead><tr style="background:var(--fondo);">
-          <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--texto-3);text-transform:uppercase;letter-spacing:0.06em;">Producto</th>
-          <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:var(--texto-3);text-transform:uppercase;letter-spacing:0.06em;">Stock</th>
-          <th style="padding:10px 14px;text-align:right;font-size:11px;font-weight:700;color:var(--texto-3);text-transform:uppercase;letter-spacing:0.06em;">Precio</th>
-          <th style="padding:10px 14px;text-align:right;font-size:11px;font-weight:700;color:var(--texto-3);text-transform:uppercase;letter-spacing:0.06em;">Ingresos</th>
-          <th style="padding:10px 14px;width:80px;"></th>
-        </tr></thead>
-        <tbody>${stockItems.map(item => `
-          <tr style="border-top:1px solid var(--borde);">
-            <td style="padding:12px 14px;">
-              <div style="font-size:14px;font-weight:600;">${item.nombre}</div>
-              ${item.categoria?`<div style="font-size:11px;color:var(--texto-3);">${item.categoria}</div>`:''}
-              ${item.nota?`<div style="font-size:11px;color:var(--texto-2);font-style:italic;">"${item.nota}"</div>`:''}
-            </td>
-            <td style="padding:12px 14px;text-align:center;">
-              <span style="padding:3px 12px;border-radius:100px;font-size:12px;font-weight:700;background:${item.cantidad>0?'var(--verde-suave)':'rgba(255,59,59,0.08)'};color:${item.cantidad>0?'var(--verde)':'var(--error)'};">${item.cantidad}</span>
-            </td>
-            <td style="padding:12px 14px;text-align:right;font-size:14px;font-weight:600;">${item.precio?'$'+Number(item.precio).toLocaleString('es-AR'):'-'}</td>
-            <td style="padding:12px 14px;text-align:right;font-size:14px;font-weight:700;color:var(--verde);">$${Number(item.ingresos||0).toLocaleString('es-AR')}</td>
-            <td style="padding:12px 14px;">
-              <div style="display:flex;gap:6px;justify-content:center;">
-                <button onclick="abrirModalStock('${item.id}')" style="width:30px;height:30px;border:1.5px solid var(--borde);border-radius:50%;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--texto-2);">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                </button>
-                <button onclick="eliminarStock('${item.id}')" style="width:30px;height:30px;border:1.5px solid rgba(255,59,59,0.2);border-radius:50%;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--error);">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                </button>
-              </div>
-            </td>
-          </tr>`).join('')}
-        </tbody></table>`;
-    } catch(e) {
-      if(tabla) tabla.innerHTML = `<div style="padding:20px;color:var(--error);font-size:13px;">Error: ${e.message}</div>`;
-    }
-  }
-</script>
 </body>
 </html>
