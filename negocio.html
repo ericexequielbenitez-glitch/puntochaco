@@ -17,256 +17,122 @@
   --sombra:0 4px 20px rgba(42,172,226,0.08);
   --sombra-lg:0 16px 48px rgba(42,172,226,0.14);
 }
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-html { scroll-behavior:smooth; }
-body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--fondo); color:var(--texto); -webkit-font-smoothing:antialiased; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--fondo);color:var(--texto);-webkit-font-smoothing:antialiased;}
 
-/* ── NAV ── */
-nav {
-  position:sticky; top:0; z-index:50; height:64px;
-  background:rgba(255,255,255,0.96); backdrop-filter:blur(16px);
-  border-bottom:1.5px solid var(--borde);
-  display:flex; align-items:center; justify-content:space-between; padding:0 32px;
-}
-.nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
-.nav-logo img { height:38px; width:auto; }
-.breadcrumb { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--texto-3); }
-.breadcrumb a { color:var(--texto-3); text-decoration:none; }
-.breadcrumb a:hover { color:var(--celeste); }
-.breadcrumb svg { width:12px; height:12px; }
-.nav-acciones { display:flex; align-items:center; gap:10px; }
-.btn {
-  display:inline-flex; align-items:center; gap:7px;
-  padding:0 18px; height:38px; border-radius:100px;
-  font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600;
-  cursor:pointer; text-decoration:none; border:none; transition:all 0.2s;
-}
-.btn-ghost { background:transparent; color:var(--texto-2); border:1.5px solid var(--borde-2); }
-.btn-ghost:hover { border-color:var(--celeste); color:var(--celeste); }
-.btn-primary { background:var(--celeste); color:#fff; }
-.btn-primary:hover { background:#4A9DC6; }
+nav{position:sticky;top:0;z-index:50;height:64px;background:rgba(255,255,255,0.96);backdrop-filter:blur(16px);border-bottom:1.5px solid var(--borde);display:flex;align-items:center;justify-content:space-between;padding:0 32px;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.nav-logo img{height:38px;width:auto;}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--texto-3);}
+.breadcrumb a{color:var(--texto-3);text-decoration:none;}
+.breadcrumb a:hover{color:var(--celeste);}
+.breadcrumb svg{width:12px;height:12px;}
+.nav-acciones{display:flex;align-items:center;gap:10px;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:0 18px;height:38px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;border:none;transition:all 0.2s;}
+.btn-ghost{background:transparent;color:var(--texto-2);border:1.5px solid var(--borde-2);}
+.btn-ghost:hover{border-color:var(--celeste);color:var(--celeste);}
 
-/* ── PERFIL HEADER ── */
-.perfil-wrap { background:var(--blanco); border-bottom:1.5px solid var(--borde); }
-.perfil-header {
-  max-width:1100px; margin:0 auto; padding:32px 32px 0;
-  display:flex; align-items:flex-start; justify-content:space-between;
-  gap:20px; flex-wrap:wrap;
-}
-.perfil-left { display:flex; align-items:center; gap:20px; }
-.neg-avatar {
-  width:88px; height:88px; border-radius:var(--r-md);
-  border:3px solid var(--blanco); box-shadow:var(--sombra-lg);
-  background:linear-gradient(135deg,var(--celeste),var(--verde));
-  display:flex; align-items:center; justify-content:center;
-  font-family:'Playfair Display',serif; font-size:28px; font-weight:700; color:var(--blanco);
-  flex-shrink:0; background-size:cover; background-position:center;
-}
-.neg-badge-verificado {
-  display:inline-flex; align-items:center; gap:5px;
-  padding:3px 10px; background:var(--celeste-suave);
-  border:1px solid var(--celeste-claro); border-radius:100px;
-  font-size:11px; font-weight:700; color:var(--celeste);
-  margin-bottom:8px;
-}
-.neg-nombre { font-family:'Playfair Display',serif; font-size:26px; font-weight:800; margin-bottom:6px; line-height:1.2; }
-.neg-meta { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
-.neg-meta-item { display:flex; align-items:center; gap:5px; font-size:13px; color:var(--texto-3); }
-.neg-meta-item svg { width:13px; height:13px; }
-.perfil-acciones { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-bottom:8px; }
-.btn-wa {
-  background:#25D366; color:var(--blanco); height:42px; padding:0 18px;
-  border-radius:100px; font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:14px; font-weight:600; cursor:pointer; border:none;
-  display:none; align-items:center; gap:7px; text-decoration:none; transition:all 0.2s;
-}
-.btn-wa:hover { background:#1ebe59; transform:translateY(-1px); }
-.btn-ig {
-  background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
-  color:var(--blanco); height:42px; padding:0 18px; border-radius:100px;
-  font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:600;
-  cursor:pointer; border:none; display:none; align-items:center; gap:7px;
-  text-decoration:none; transition:all 0.2s;
-}
-.btn-ig:hover { filter:brightness(1.1); transform:translateY(-1px); }
-.btn-compartir {
-  background:transparent; color:var(--texto-2); border:1.5px solid var(--borde-2);
-  height:42px; padding:0 18px; border-radius:100px;
-  font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:600;
-  cursor:pointer; display:flex; align-items:center; gap:7px;
-  text-decoration:none; transition:all 0.2s;
-}
-.btn-compartir:hover { border-color:var(--celeste); color:var(--celeste); }
+.perfil-wrap{background:var(--blanco);border-bottom:1.5px solid var(--borde);}
+.perfil-header{max-width:1100px;margin:0 auto;padding:32px 32px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.perfil-left{display:flex;align-items:center;gap:20px;}
+.neg-avatar{width:88px;height:88px;border-radius:var(--r-md);border:3px solid var(--blanco);box-shadow:var(--sombra-lg);background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--blanco);flex-shrink:0;background-size:cover;background-position:center;}
+.neg-cat{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;background:var(--verde-suave);border:1px solid rgba(58,143,90,0.2);border-radius:100px;font-size:11px;font-weight:700;color:var(--verde);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;}
+.neg-nombre{font-family:'Playfair Display',serif;font-size:26px;font-weight:800;margin-bottom:6px;line-height:1.2;}
+.neg-meta{display:flex;align-items:center;flex-wrap:wrap;gap:12px;}
+.neg-meta-item{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--texto-3);}
+.neg-meta-item svg{width:13px;height:13px;}
+.neg-badge-verificado{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:var(--celeste-suave);border:1px solid var(--celeste-claro);border-radius:100px;font-size:11px;font-weight:700;color:var(--celeste);}
+.perfil-acciones{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:8px;}
+.btn-wa{background:#25D366;color:var(--blanco);height:42px;padding:0 18px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;display:none;align-items:center;gap:7px;text-decoration:none;transition:all 0.2s;}
+.btn-wa:hover{background:#1ebe59;transform:translateY(-1px);}
+.btn-ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:var(--blanco);height:42px;padding:0 18px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;display:none;align-items:center;gap:7px;text-decoration:none;transition:all 0.2s;}
+.btn-ig:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.btn-compartir{background:transparent;color:var(--texto-2);border:1.5px solid var(--borde-2);height:42px;padding:0 18px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;text-decoration:none;transition:all 0.2s;}
+.btn-compartir:hover{border-color:var(--celeste);color:var(--celeste);}
 
-/* ── TABS ── */
-.tabs-wrap { max-width:1100px; margin:0 auto; padding:0 32px; }
-.tabs { display:flex; border-bottom:2px solid var(--borde); margin-top:20px; }
-.tab {
-  padding:12px 20px; font-size:14px; font-weight:600; color:var(--texto-3);
-  cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px;
-  transition:all 0.2s; white-space:nowrap;
-}
-.tab:hover { color:var(--texto); }
-.tab.activo { color:var(--texto); border-bottom-color:var(--celeste); }
+.tabs-wrap{max-width:1100px;margin:0 auto;padding:0 32px;}
+.tabs{display:flex;border-bottom:2px solid var(--borde);margin-top:20px;}
+.tab{padding:12px 20px;font-size:14px;font-weight:600;color:var(--texto-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.2s;white-space:nowrap;}
+.tab:hover{color:var(--texto);}
+.tab.activo{color:var(--texto);border-bottom-color:var(--celeste);}
 
-/* ── CONTENT ── */
-.content-wrap {
-  max-width:1100px; margin:0 auto; padding:28px 32px 80px;
-  display:grid; grid-template-columns:1fr 300px; gap:28px; align-items:start;
-}
+.content-wrap{max-width:1100px;margin:0 auto;padding:28px 32px 80px;display:grid;grid-template-columns:1fr 300px;gap:28px;align-items:start;}
 
-/* ── PRODUCTOS ── */
-.prod-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
-.prod-card {
-  background:var(--blanco); border:1.5px solid var(--borde);
-  border-radius:var(--r-lg); overflow:hidden; transition:all 0.3s; cursor:pointer;
-}
-.prod-card:hover { transform:translateY(-4px); box-shadow:var(--sombra-lg); border-color:var(--celeste-claro); }
-.prod-img {
-  height:160px; background:var(--fondo-2);
-  display:flex; align-items:center; justify-content:center;
-  position:relative; background-size:cover; background-position:center;
-}
-.prod-overlay {
-  position:absolute; inset:0;
-  background:rgba(26,43,74,0.5);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:6px; color:var(--blanco); font-size:13px; font-weight:600;
-  opacity:0; transition:opacity 0.25s;
-}
-.prod-card:hover .prod-overlay { opacity:1; }
-.prod-multi-badge {
-  position:absolute; top:8px; right:8px;
-  padding:3px 8px; background:rgba(26,43,74,0.75);
-  color:var(--blanco); font-size:11px; font-weight:600;
-  border-radius:100px; backdrop-filter:blur(4px);
-}
-.prod-body { padding:14px; }
-.prod-titulo { font-size:15px; font-weight:700; margin-bottom:4px; line-height:1.3; }
-.prod-desc {
-  font-size:12px; color:var(--texto-3); margin-bottom:8px; line-height:1.5;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
-}
-.prod-precio { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:var(--verde); }
-.sin-prods {
-  display:none; flex-direction:column; align-items:center; justify-content:center;
-  padding:60px 20px; text-align:center;
-  background:var(--blanco); border:1.5px dashed var(--borde); border-radius:var(--r-lg);
-}
-.sin-prods svg { width:48px; height:48px; stroke:var(--texto-3); margin-bottom:16px; }
-.sin-prods h3 { font-size:17px; font-weight:700; margin-bottom:6px; }
-.sin-prods p { font-size:14px; color:var(--texto-2); }
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
+.prod-card{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;transition:all 0.3s;cursor:pointer;}
+.prod-card:hover{transform:translateY(-4px);box-shadow:var(--sombra-lg);border-color:var(--celeste-claro);}
+.prod-img{height:160px;background:var(--fondo-2);display:flex;align-items:center;justify-content:center;position:relative;background-size:cover;background-position:center;}
+.prod-overlay{position:absolute;inset:0;background:rgba(26,43,74,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--blanco);font-size:13px;font-weight:600;opacity:0;transition:opacity 0.25s;}
+.prod-card:hover .prod-overlay{opacity:1;}
+.prod-multi-badge{position:absolute;top:8px;right:8px;padding:3px 8px;background:rgba(26,43,74,0.75);color:var(--blanco);font-size:11px;font-weight:600;border-radius:100px;backdrop-filter:blur(4px);}
+.prod-body{padding:14px;}
+.prod-titulo{font-size:15px;font-weight:700;margin-bottom:4px;line-height:1.3;}
+.prod-desc{font-size:12px;color:var(--texto-3);margin-bottom:8px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.prod-precio{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--verde);}
 
-/* ── SIDEBAR ── */
-.sidebar-info { display:flex; flex-direction:column; gap:14px; }
-.info-card { background:var(--blanco); border:1.5px solid var(--borde); border-radius:var(--r-lg); padding:20px; }
-.info-card-titulo { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--texto-3); margin-bottom:14px; }
-.info-fila { display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--borde); }
-.info-fila:last-child { border-bottom:none; padding-bottom:0; }
-.info-fila svg { width:15px; height:15px; stroke:var(--texto-3); flex-shrink:0; margin-top:2px; }
-.info-fila-lbl { font-size:11px; color:var(--texto-3); margin-bottom:2px; }
-.info-fila-val { font-size:13px; color:var(--texto); font-weight:500; }
+.sin-prods{display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;background:var(--blanco);border:1.5px dashed var(--borde);border-radius:var(--r-lg);}
+.sin-prods svg{width:48px;height:48px;stroke:var(--texto-3);margin-bottom:16px;}
+.sin-prods h3{font-size:17px;font-weight:700;margin-bottom:6px;}
+.sin-prods p{font-size:14px;color:var(--texto-2);}
 
-/* ── TURNO CARD ── */
-.turno-card { background:var(--texto); border-radius:var(--r-lg); padding:20px; }
-.turno-dot { width:7px; height:7px; background:#3BAF6E; border-radius:50%; animation:pulsar 2s ease infinite; }
-@keyframes pulsar { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
-.turno-card h3 { font-family:'Playfair Display',serif; font-size:17px; font-weight:700; color:var(--blanco); margin:8px 0 6px; }
-.turno-card p { font-size:13px; color:rgba(255,255,255,0.5); line-height:1.5; margin-bottom:14px; }
-.btn-turno {
-  width:100%; height:48px; background:var(--celeste); color:var(--blanco);
-  border:none; border-radius:100px; font-family:'Plus Jakarta Sans',sans-serif;
+.sidebar-info{display:flex;flex-direction:column;gap:14px;}
+.info-card{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);padding:20px;}
+.info-card-titulo{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--texto-3);margin-bottom:14px;}
+.info-fila{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--borde);}
+.info-fila:last-child{border-bottom:none;padding-bottom:0;}
+.info-fila svg{width:15px;height:15px;stroke:var(--texto-3);flex-shrink:0;margin-top:2px;}
+.info-fila-lbl{font-size:11px;color:var(--texto-3);margin-bottom:2px;}
+.info-fila-val{font-size:13px;color:var(--texto);font-weight:500;}
+
+.turno-card{background:var(--texto);border-radius:var(--r-lg);padding:20px;}
+.turno-dot{width:7px;height:7px;background:#3BAF6E;border-radius:50%;animation:pulsar 2s ease infinite;}
+@keyframes pulsar{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+.turno-card h3{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--blanco);margin:8px 0 6px;}
+.turno-card p{font-size:13px;color:rgba(255,255,255,0.5);line-height:1.5;margin-bottom:14px;}
+.btn-turno{
+  width:100%; height:48px;
+  background:var(--celeste);
+  color:var(--blanco); border:none; border-radius:100px;
+  font-family:'Plus Jakarta Sans',sans-serif;
   font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s;
   display:flex; align-items:center; justify-content:center; gap:8px;
   box-shadow:0 4px 16px rgba(91,173,214,0.35);
 }
-.btn-turno:hover { background:#4A9DC6; transform:translateY(-2px); box-shadow:0 8px 24px rgba(91,173,214,0.5); }
+.btn-turno:hover{background:#4A9DC6;transform:translateY(-2px);box-shadow:0 8px 24px rgba(91,173,214,0.5);}
 
-/* ── REPORTAR ── */
-.reportar-btn {
-  display:flex; align-items:center; gap:6px;
-  font-size:12px; color:var(--texto-3); cursor:pointer;
-  background:none; border:none; padding:0; transition:color 0.2s;
-  font-family:'Plus Jakarta Sans',sans-serif;
-}
-.reportar-btn:hover { color:#FF3B3B; }
+.neg-desc-texto{font-size:14px;color:var(--texto-2);line-height:1.7;}
 
-/* ── DESCRIPCION ── */
-.neg-desc-texto { font-size:14px; color:var(--texto-2); line-height:1.7; }
+/* LIGHTBOX */
+.lightbox{display:none;position:fixed;inset:0;z-index:1000;background:rgba(10,20,40,0.92);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;}
+.lb-box{background:var(--blanco);border-radius:var(--r-lg);overflow:hidden;max-width:760px;width:100%;max-height:90vh;display:flex;flex-direction:column;animation:aparecer 0.3s ease;box-shadow:0 32px 80px rgba(0,0,0,0.3);}
+@keyframes aparecer{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
+.lb-img-wrap{position:relative;background:var(--fondo-2);display:flex;align-items:center;justify-content:center;min-height:300px;max-height:460px;overflow:hidden;}
+#lbImg{max-width:100%;max-height:460px;object-fit:contain;display:block;}
+#lbNoImg{display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--texto-3);}
+#lbNoImg svg{width:48px;height:48px;margin-bottom:12px;}
+#lbNoImg p{font-size:14px;}
+.lb-btn-nav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+.lb-btn-nav:hover{background:var(--blanco);transform:translateY(-50%) scale(1.05);}
+.lb-btn-nav svg{width:18px;height:18px;stroke:var(--texto);}
+#lbPrev{left:12px;display:none;}
+#lbNext{right:12px;display:none;}
+.lb-counter{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);padding:3px 12px;background:rgba(0,0,0,0.5);color:var(--blanco);font-size:12px;font-weight:600;border-radius:100px;display:none;}
+.lb-info{padding:20px 24px;}
+.lb-titulo{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;margin-bottom:6px;}
+.lb-desc{font-size:14px;color:var(--texto-2);line-height:1.6;margin-bottom:12px;}
+.lb-precio{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--verde);}
+.lb-footer{padding:12px 24px;border-top:1.5px solid var(--borde);display:flex;justify-content:flex-end;}
+.lb-cerrar{background:var(--fondo);border:1.5px solid var(--borde);color:var(--texto-2);height:38px;padding:0 18px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.lb-cerrar:hover{border-color:var(--celeste);color:var(--celeste);}
 
-/* ── LIGHTBOX ── */
-.lightbox {
-  display:none; position:fixed; inset:0; z-index:1000;
-  background:rgba(10,20,40,0.92); backdrop-filter:blur(12px);
-  align-items:center; justify-content:center; padding:20px;
-}
-.lb-box {
-  background:var(--blanco); border-radius:var(--r-lg); overflow:hidden;
-  max-width:760px; width:100%; max-height:90vh;
-  display:flex; flex-direction:column;
-  animation:aparecer 0.3s ease; box-shadow:0 32px 80px rgba(0,0,0,0.3);
-}
-@keyframes aparecer { from{transform:scale(0.95);opacity:0} to{transform:scale(1);opacity:1} }
-.lb-img-wrap {
-  position:relative; background:var(--fondo-2);
-  display:flex; align-items:center; justify-content:center;
-  min-height:300px; max-height:460px; overflow:hidden;
-}
-#lbImg { max-width:100%; max-height:460px; object-fit:contain; display:block; }
-#lbNoImg {
-  display:none; flex-direction:column; align-items:center;
-  justify-content:center; padding:60px; color:var(--texto-3);
-}
-#lbNoImg svg { width:48px; height:48px; margin-bottom:12px; }
-#lbNoImg p { font-size:14px; }
-.lb-btn-nav {
-  position:absolute; top:50%; transform:translateY(-50%);
-  width:40px; height:40px; border-radius:50%;
-  background:rgba(255,255,255,0.9); border:none; cursor:pointer;
-  display:none; align-items:center; justify-content:center;
-  transition:all 0.2s; box-shadow:0 2px 8px rgba(0,0,0,0.15);
-}
-.lb-btn-nav:hover { background:var(--blanco); transform:translateY(-50%) scale(1.05); }
-.lb-btn-nav svg { width:18px; height:18px; stroke:var(--texto); }
-#lbPrev { left:12px; }
-#lbNext { right:12px; }
-.lb-counter {
-  display:none; position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
-  padding:3px 12px; background:rgba(0,0,0,0.5); color:var(--blanco);
-  font-size:12px; font-weight:600; border-radius:100px; backdrop-filter:blur(4px);
-}
-.lb-info { padding:20px 24px; }
-.lb-titulo { font-family:'Playfair Display',serif; font-size:20px; font-weight:800; margin-bottom:6px; }
-.lb-desc { font-size:14px; color:var(--texto-2); line-height:1.6; margin-bottom:12px; }
-.lb-precio { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; color:var(--verde); }
-.lb-footer { padding:12px 24px; border-top:1.5px solid var(--borde); display:flex; justify-content:flex-end; }
-.lb-cerrar {
-  background:var(--fondo); border:1.5px solid var(--borde); color:var(--texto-2);
-  height:38px; padding:0 18px; border-radius:100px;
-  font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600;
-  cursor:pointer; transition:all 0.2s;
-}
-.lb-cerrar:hover { border-color:var(--celeste); color:var(--celeste); }
-
-/* ── RESPONSIVE ── */
-@media(max-width:900px) {
-  .content-wrap { grid-template-columns:1fr; }
-  .sidebar-info { order:-1; }
-  .perfil-header { padding:20px 20px 0; }
-  .tabs-wrap { padding:0 20px; }
-  .content-wrap { padding:20px 20px 60px; }
-  nav { padding:0 16px; }
-}
-@media(max-width:600px) {
-  .perfil-left { flex-direction:column; align-items:flex-start; }
-  .neg-nombre { font-size:20px; }
-  .neg-avatar { width:68px; height:68px; font-size:22px; }
-}
+@media(max-width:900px){.content-wrap{grid-template-columns:1fr;}.sidebar-info{order:-1;}.perfil-header{padding:20px 20px 0;}.tabs-wrap{padding:0 20px;}.content-wrap{padding:20px 20px 60px;}nav{padding:0 16px;}}
+@media(max-width:600px){.perfil-left{flex-direction:column;align-items:flex-start;}.neg-nombre{font-size:20px;}.neg-avatar{width:68px;height:68px;font-size:22px;}}
 </style>
 </head>
 <body>
 
-<!-- ── LIGHTBOX ── -->
+<!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox">
   <div class="lb-box">
     <div class="lb-img-wrap">
@@ -275,12 +141,8 @@ nav {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <p>Sin imagen disponible</p>
       </div>
-      <button class="lb-btn-nav" id="lbPrev">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <button class="lb-btn-nav" id="lbNext">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
+      <button class="lb-btn-nav" id="lbPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <button class="lb-btn-nav" id="lbNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
       <div class="lb-counter" id="lbCounter"></div>
     </div>
     <div class="lb-info">
@@ -294,7 +156,7 @@ nav {
   </div>
 </div>
 
-<!-- ── NAV ── -->
+<!-- NAV -->
 <nav>
   <a href="index.html" class="nav-logo">
     <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco">
@@ -302,27 +164,30 @@ nav {
   <div class="breadcrumb">
     <a href="index.html">Inicio</a>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-    <span id="breadCategoria">-</span>
+    <span id="negCategoriaBread">-</span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-    <span id="breadNombre">-</span>
+    <span id="negNombreBread">-</span>
   </div>
   <div class="nav-acciones" id="navAcciones">
     <a href="login.html" class="btn btn-ghost">Iniciar sesión</a>
-    <a href="registro.html" class="btn btn-primary">Publicar negocio</a>
   </div>
 </nav>
 
-<!-- ── PERFIL ── -->
+<!-- PERFIL -->
 <div class="perfil-wrap">
   <div class="perfil-header">
     <div class="perfil-left">
       <div class="neg-avatar" id="negAvatar">
-        <span id="negAvatarTexto"></span>
+        <span id="negAvatarTexto">?</span>
       </div>
       <div>
-        <div class="neg-badge-verificado">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polyline points="20 6 9 17 4 12"/></svg>
-          Negocio verificado
+        <!-- Badge verificado - solo visible si verificado=true -->
+        <div class="neg-badge-verificado" id="badgeVerificado" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+            <circle cx="12" cy="12" r="11" fill="#5BADD6"/>
+            <polyline points="7 12 10.5 15.5 17 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Verificado
         </div>
         <h1 class="neg-nombre" id="negNombre">Cargando...</h1>
         <div class="neg-meta">
@@ -335,14 +200,31 @@ nav {
             <span id="negHorarios">-</span>
           </div>
         </div>
+        <!-- SEGUIDORES -->
+        <div style="display:flex;align-items:center;gap:20px;margin-top:10px;">
+          <div style="text-align:center;cursor:default;">
+            <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--texto);" id="pubSeguidores">0</div>
+            <div style="font-size:11px;color:var(--texto-3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Seguidores</div>
+          </div>
+          <div style="text-align:center;cursor:default;">
+            <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--texto);" id="pubPubs">0</div>
+            <div style="font-size:11px;color:var(--texto-3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Publicaciones</div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="perfil-acciones">
-      <a href="#" id="btnWa" class="btn-wa" target="_blank" rel="noopener">
+      <!-- BOTÓN SEGUIR -->
+      <button id="btnSeguir" onclick="toggleSeguir()"
+        style="height:42px;padding:0 20px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid var(--celeste);background:var(--celeste);color:var(--blanco);display:none;align-items:center;gap:7px;transition:all 0.2s;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Seguir
+      </button>
+      <a href="#" id="btnWa" class="btn-wa">
         <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
         WhatsApp
       </a>
-      <a href="#" id="btnIg" class="btn-ig" target="_blank" rel="noopener">
+      <a href="#" id="btnIg" class="btn-ig">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
         Instagram
       </a>
@@ -360,20 +242,17 @@ nav {
   </div>
 </div>
 
-<!-- ── CONTENIDO ── -->
+<!-- CONTENIDO -->
 <div class="content-wrap">
   <div>
-    <!-- TAB PRODUCTOS -->
     <div id="tabProductos">
       <div class="prod-grid" id="gridProductos" style="display:none;"></div>
       <div class="sin-prods" id="sinProductos">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-        <h3>Todavía no hay productos publicados</h3>
+        <h3>Todavía no hay productos</h3>
         <p>Este negocio aún no cargó sus productos.</p>
       </div>
     </div>
-
-    <!-- TAB INFO -->
     <div id="tabInfo" style="display:none;">
       <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);padding:24px;">
         <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:12px;">Sobre nosotros</h3>
@@ -381,17 +260,13 @@ nav {
         <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--borde);">
           <div class="info-fila">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <div>
-              <div class="info-fila-lbl">Dirección</div>
-              <div class="info-fila-val" id="negDireccion">-</div>
-            </div>
+            <div><div class="info-fila-lbl">Dirección</div><div class="info-fila-val" id="negDireccion">-</div></div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SIDEBAR -->
   <div class="sidebar-info">
     <div class="turno-card">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
@@ -400,7 +275,7 @@ nav {
       </div>
       <h3>Reservá tu pedido</h3>
       <p>Coordiná el retiro o entrega directamente con el vendedor.</p>
-      <button class="btn-turno" id="btnTurno">
+      <button class="btn-turno">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         Ver disponibilidad
       </button>
@@ -409,288 +284,316 @@ nav {
       <div class="info-card-titulo">Información</div>
       <div class="info-fila">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <div>
-          <div class="info-fila-lbl">Localidad</div>
-          <div class="info-fila-val" id="sideLocalidad">-</div>
-        </div>
+        <div><div class="info-fila-lbl">Localidad</div><div class="info-fila-val" id="sideLocalidad">-</div></div>
       </div>
       <div class="info-fila">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <div>
-          <div class="info-fila-lbl">Dirección</div>
-          <div class="info-fila-val" id="sideDireccion">-</div>
-        </div>
+        <div><div class="info-fila-lbl">Dirección</div><div class="info-fila-val" id="sideDireccion">-</div></div>
       </div>
       <div class="info-fila">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <div>
-          <div class="info-fila-lbl">Horarios</div>
-          <div class="info-fila-val" id="sideHorarios">-</div>
-        </div>
+        <div><div class="info-fila-lbl">Horarios</div><div class="info-fila-val" id="sideHorarios">-</div></div>
       </div>
     </div>
-    <button class="reportar-btn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-      Reportar este negocio
-    </button>
   </div>
 </div>
 
-<!-- ── ÚNICO SCRIPT ── -->
+<!-- TODO EL JS AL FINAL DEL BODY -->
 <script type="module">
-import { initializeApp }        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc, deleteDoc, updateDoc }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ── Firebase (única inicialización) ──
-const app  = initializeApp({
-  apiKey: "AIzaSyCibGsSHDHn6c8VXLzUlqeKXpaxibfpVuc",
-  authDomain: "chacoemprende-df731.firebaseapp.com",
-  projectId: "chacoemprende-df731",
-  storageBucket: "chacoemprende-df731.firebasestorage.app",
-  messagingSenderId: "871612466602",
-  appId: "1:871612466602:web:fe62a4f01c38d5b2c417d3"
-});
-const auth = getAuth(app);
-const db   = getFirestore(app);
-
-// ── Helpers ──
-function set(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val || "-";
-}
-
-// ── Navbar dinámico ──
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
-  try {
-    const snap = await getDoc(doc(db, "usuarios", user.uid));
-    if (!snap.exists()) return;
-    const d = snap.data();
-    const destino = d.rol === "admin" ? "admin.html" : "dashboard.html";
-    document.getElementById("navAcciones").innerHTML =
-      `<a href="${destino}" class="btn btn-ghost" style="gap:7px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Mi panel
-      </a>
-      <span style="font-size:13px;color:var(--texto-2);font-weight:600;">Hola, ${d.nombre}</span>`;
-  } catch(e) {}
-});
-
-// ── Tabs ──
-document.getElementById("tabBtnProductos").addEventListener("click", () => {
-  document.getElementById("tabProductos").style.display = "block";
-  document.getElementById("tabInfo").style.display = "none";
-  document.getElementById("tabBtnProductos").classList.add("activo");
-  document.getElementById("tabBtnInfo").classList.remove("activo");
-});
-document.getElementById("tabBtnInfo").addEventListener("click", () => {
-  document.getElementById("tabProductos").style.display = "none";
-  document.getElementById("tabInfo").style.display = "block";
-  document.getElementById("tabBtnInfo").classList.add("activo");
-  document.getElementById("tabBtnProductos").classList.remove("activo");
-});
-
-// ── Compartir ──
-document.getElementById("btnCompartir").addEventListener("click", () => {
-  if (navigator.share) navigator.share({ title: document.title, url: location.href });
-  else navigator.clipboard.writeText(location.href).then(() => alert("Link copiado"));
-});
-
-// ── Lightbox ──
-let lbImgs = [], lbIdx = 0;
-
-function abrirLightbox(imgs, titulo, desc, precio) {
-  lbImgs = imgs || [];
-  lbIdx  = 0;
-  set("lbTitulo", titulo);
-  document.getElementById("lbDesc").textContent   = desc || "";
-  document.getElementById("lbPrecio").textContent = "$" + Number(precio || 0).toLocaleString("es-AR");
-  actualizarLb();
-  document.getElementById("lightbox").style.display = "flex";
-  document.body.style.overflow = "hidden";
-}
-
-function actualizarLb() {
-  const img     = document.getElementById("lbImg");
-  const noImg   = document.getElementById("lbNoImg");
-  const counter = document.getElementById("lbCounter");
-  const prev    = document.getElementById("lbPrev");
-  const next    = document.getElementById("lbNext");
-
-  if (!lbImgs.length) {
-    img.style.display = "none";
-    noImg.style.display = "flex";
-    [counter, prev, next].forEach(el => el.style.display = "none");
-    return;
-  }
-
-  img.src = lbImgs[lbIdx];
-  img.style.display = "block";
-  noImg.style.display = "none";
-
-  if (lbImgs.length > 1) {
-    counter.textContent = (lbIdx + 1) + " / " + lbImgs.length;
-    counter.style.display = "block";
-    prev.style.display = lbIdx > 0 ? "flex" : "none";
-    next.style.display = lbIdx < lbImgs.length - 1 ? "flex" : "none";
-  } else {
-    [counter, prev, next].forEach(el => el.style.display = "none");
-  }
-}
-
-function cerrarLb() {
-  document.getElementById("lightbox").style.display = "none";
-  document.body.style.overflow = "";
-}
-
-document.getElementById("lbPrev").addEventListener("click", () => { if (lbIdx > 0) { lbIdx--; actualizarLb(); } });
-document.getElementById("lbNext").addEventListener("click", () => { if (lbIdx < lbImgs.length - 1) { lbIdx++; actualizarLb(); } });
-document.getElementById("btnCerrarLb").addEventListener("click", cerrarLb);
-document.getElementById("lightbox").addEventListener("click", (e) => { if (e.target === document.getElementById("lightbox")) cerrarLb(); });
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape")      cerrarLb();
-  if (e.key === "ArrowLeft"  && lbIdx > 0)                    { lbIdx--; actualizarLb(); }
-  if (e.key === "ArrowRight" && lbIdx < lbImgs.length - 1)   { lbIdx++; actualizarLb(); }
-});
-
-// ── Render productos ──
-function renderProductos(lista) {
-  const grid  = document.getElementById("gridProductos");
-  const empty = document.getElementById("sinProductos");
-
-  if (!lista.length) {
-    empty.style.display = "flex";
-    grid.style.display  = "none";
-    return;
-  }
-
-  grid.style.display  = "grid";
-  empty.style.display = "none";
-
-  const prods = lista; // closure reference
-
-  grid.innerHTML = lista.map((p, i) => {
-    const imgs = p.imagenes || (p.imageUrl ? [p.imageUrl] : []);
-    const img0 = imgs[0] || "";
-    return `<div class="prod-card" data-i="${i}">
-      <div class="prod-img" style="${img0 ? 'background-image:url(' + JSON.stringify(img0) + ')' : ''}">
-        ${!img0 ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="color:var(--texto-3)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' : ""}
-        ${imgs.length > 1 ? '<div class="prod-multi-badge">' + imgs.length + ' fotos</div>' : ""}
-        <div class="prod-overlay">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          Ver detalle
-        </div>
-      </div>
-      <div class="prod-body">
-        <div class="prod-titulo">${p.titulo || ""}</div>
-        ${p.descripcion ? '<div class="prod-desc">' + p.descripcion + '</div>' : ""}
-        <div class="prod-precio">$${Number(p.precio || 0).toLocaleString("es-AR")}</div>
-      </div>
-    </div>`;
-  }).join("");
-
-  grid.querySelectorAll(".prod-card").forEach(card => {
-    card.addEventListener("click", () => {
-      const p    = prods[parseInt(card.dataset.i)];
-      const imgs = p.imagenes || (p.imageUrl ? [p.imageUrl] : []);
-      abrirLightbox(imgs, p.titulo, p.descripcion, p.precio);
-    });
+  const app = initializeApp({
+    apiKey: "AIzaSyCibGsSHDHn6c8VXLzUlqeKXpaxibfpVuc",
+    authDomain: "chacoemprende-df731.firebaseapp.com",
+    projectId: "chacoemprende-df731",
+    storageBucket: "chacoemprende-df731.firebasestorage.app",
+    messagingSenderId: "871612466602",
+    appId: "1:871612466602:web:fe62a4f01c38d5b2c417d3"
   });
-}
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
 
-// ── Render negocio ──
-function renderNegocio(n, productos) {
-  set("negNombre",     n.nombre);
-  set("negLocalidad",  n.localidad);
-  set("negDireccion",  n.direccion);
-  set("negDescripcion",n.descripcion);
-  set("breadCategoria",n.categoria);
-  set("breadNombre",   n.nombre);
-  set("sideLocalidad", n.localidad);
-  set("sideDireccion", n.direccion);
-  document.title = (n.nombre || "Negocio") + " — PuntoChaco";
+  // ── LIGHTBOX ──
+  let lbImgs = [], lbIdx = 0;
 
-  // Avatar
-  if (n.logoUrl) {
-    document.getElementById("negAvatar").style.backgroundImage = `url('${n.logoUrl}')`;
-    document.getElementById("negAvatarTexto").style.display    = "none";
-  } else {
-    document.getElementById("negAvatarTexto").textContent = (n.nombre || "?")[0].toUpperCase();
+  function abrirLightbox(imgs, titulo, desc, precio) {
+    lbImgs = imgs || [];
+    lbIdx  = 0;
+    document.getElementById("lbTitulo").textContent = titulo || "";
+    document.getElementById("lbDesc").textContent   = desc   || "";
+    document.getElementById("lbPrecio").textContent = "$" + Number(precio||0).toLocaleString("es-AR");
+    actualizarLb();
+    document.getElementById("lightbox").style.display = "flex";
+    document.body.style.overflow = "hidden";
   }
 
-  // Horarios
-  if (n.horarios && n.horarios.dias && n.horarios.dias.length) {
-    const hStr = n.horarios.dias.join(", ") + " · " + n.horarios.apertura + " - " + n.horarios.cierre;
-    set("negHorarios",  hStr);
-    set("sideHorarios", hStr);
+  function actualizarLb() {
+    const img = document.getElementById("lbImg");
+    const noImg = document.getElementById("lbNoImg");
+    const counter = document.getElementById("lbCounter");
+    const prev = document.getElementById("lbPrev");
+    const next = document.getElementById("lbNext");
+    if (!lbImgs.length) {
+      img.style.display = "none"; noImg.style.display = "flex";
+      counter.style.display = prev.style.display = next.style.display = "none";
+      return;
+    }
+    img.src = lbImgs[lbIdx]; img.style.display = "block"; noImg.style.display = "none";
+    if (lbImgs.length > 1) {
+      counter.textContent = (lbIdx+1) + " / " + lbImgs.length;
+      counter.style.display = "block";
+      prev.style.display = lbIdx > 0 ? "flex" : "none";
+      next.style.display = lbIdx < lbImgs.length-1 ? "flex" : "none";
+    } else {
+      counter.style.display = prev.style.display = next.style.display = "none";
+    }
   }
 
-  // WhatsApp
-  if (n.whatsapp) {
-    const wa = document.getElementById("btnWa");
-    wa.href = "https://wa.me/" + n.whatsapp.replace(/\D/g, "");
-    wa.style.display = "inline-flex";
+  document.getElementById("lbPrev").onclick = () => { if(lbIdx>0){lbIdx--;actualizarLb();} };
+  document.getElementById("lbNext").onclick = () => { if(lbIdx<lbImgs.length-1){lbIdx++;actualizarLb();} };
+  document.getElementById("btnCerrarLb").onclick = cerrarLb;
+  document.getElementById("lightbox").onclick = (e) => { if(e.target===document.getElementById("lightbox")) cerrarLb(); };
+  document.addEventListener("keydown", e => {
+    if(e.key==="Escape") cerrarLb();
+    if(e.key==="ArrowLeft"&&lbIdx>0){lbIdx--;actualizarLb();}
+    if(e.key==="ArrowRight"&&lbIdx<lbImgs.length-1){lbIdx++;actualizarLb();}
+  });
+  function cerrarLb() { document.getElementById("lightbox").style.display="none"; document.body.style.overflow=""; }
+
+  // ── TABS ──
+  document.getElementById("tabBtnProductos").onclick = function() {
+    document.getElementById("tabProductos").style.display = "block";
+    document.getElementById("tabInfo").style.display = "none";
+    document.getElementById("tabBtnProductos").classList.add("activo");
+    document.getElementById("tabBtnInfo").classList.remove("activo");
+  };
+  document.getElementById("tabBtnInfo").onclick = function() {
+    document.getElementById("tabProductos").style.display = "none";
+    document.getElementById("tabInfo").style.display = "block";
+    document.getElementById("tabBtnInfo").classList.add("activo");
+    document.getElementById("tabBtnProductos").classList.remove("activo");
+  };
+
+  // ── COMPARTIR ──
+  document.getElementById("btnCompartir").onclick = () => {
+    if (navigator.share) navigator.share({title: document.title, url: location.href});
+    else { navigator.clipboard.writeText(location.href); alert("Link copiado"); }
+  };
+
+  // ── NAVBAR DINÁMICO ──
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+    try {
+      const snap = await getDoc(doc(db, "usuarios", user.uid));
+      if (!snap.exists()) return;
+      const d = snap.data();
+      const destino = d.rol === "admin" ? "admin.html" : "dashboard.html";
+      document.getElementById("navAcciones").innerHTML =
+        `<a href="${destino}" class="btn btn-ghost" style="gap:7px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Mi panel
+        </a>
+        <span style="font-size:13px;color:var(--texto-2);font-weight:600;">Hola, ${d.nombre}</span>`;
+    } catch(e) {}
+  });
+
+  // ── CARGAR NEGOCIO ──
+  const params = new URLSearchParams(window.location.search);
+  const slug   = params.get("slug");
+
+  async function cargar() {
+    if (!slug) { mostrarSinNegocio(); return; }
+    try {
+      const q    = query(collection(db, "negocios"), where("slug", "==", slug));
+      const snap = await getDocs(q);
+      if (snap.empty) { mostrarSinNegocio(); return; }
+      const negocio = { id: snap.docs[0].id, ...snap.docs[0].data() };
+      const pubQ  = query(collection(db, "publicaciones"),
+                          where("negocioId", "==", negocio.id),
+                          where("aprobado", "==", true));
+      const pubs  = await getDocs(pubQ);
+      const productos = pubs.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderNegocio(negocio, productos);
+    } catch(e) { mostrarSinNegocio(); }
   }
 
-  // Instagram
-  if (n.instagram) {
-    const ig = document.getElementById("btnIg");
-    ig.href = "https://instagram.com/" + n.instagram.replace("@", "");
-    ig.style.display = "inline-flex";
+  function renderNegocio(n, productos) {
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val || "-"; };
+    set("negNombre", n.nombre);
+    set("negLocalidad", n.localidad);
+    set("negDireccion", n.direccion);
+    set("negDescripcion", n.descripcion);
+    set("negCategoriaBread", n.categoria);
+    set("negNombreBread", n.nombre);
+    set("sideLocalidad", n.localidad);
+    set("sideDireccion", n.direccion);
+    document.title = (n.nombre || "Negocio") + " — PuntoChaco";
+
+    // Badge verificado — SVG celeste solo si verificado=true
+    const badge = document.getElementById("badgeVerificado");
+    if (badge) badge.style.display = n.verificado ? "inline-flex" : "none";
+
+    // Seguidores
+    const segEl = document.getElementById("pubSeguidores");
+    const pubEl = document.getElementById("pubPubs");
+    if(segEl) segEl.textContent = n.seguidores || 0;
+    if(pubEl) pubEl.textContent = productos.length;
+
+    if (n.logoUrl) {
+      document.getElementById("negAvatar").style.backgroundImage = `url('${n.logoUrl}')`;
+      document.getElementById("negAvatarTexto").style.display = "none";
+    } else {
+      document.getElementById("negAvatarTexto").textContent = (n.nombre||"?")[0].toUpperCase();
+    }
+
+    if (n.horarios && n.horarios.dias && n.horarios.dias.length) {
+      const hStr = n.horarios.dias.join(", ") + " · " + n.horarios.apertura + " - " + n.horarios.cierre;
+      set("negHorarios", hStr); set("sideHorarios", hStr);
+    }
+
+    if (n.whatsapp) {
+      const wa = document.getElementById("btnWa");
+      wa.href = "https://wa.me/" + n.whatsapp.replace(/\D/g,"");
+      wa.style.display = "inline-flex";
+    }
+    if (n.instagram) {
+      const ig = document.getElementById("btnIg");
+      ig.href = "https://instagram.com/" + n.instagram.replace("@","");
+      ig.style.display = "inline-flex";
+    }
+
+    // Botón seguir — mostrar si hay usuario logueado y no es el dueño
+    window._negocioId = n.id || snap?.docs[0]?.id;
+    window._negocioData = n;
+
+    renderProductos(productos);
   }
 
-  renderProductos(productos);
-}
+  function renderProductos(lista) {
+    const grid  = document.getElementById("gridProductos");
+    const empty = document.getElementById("sinProductos");
+    if (!lista.length) { empty.style.display = "flex"; grid.style.display = "none"; return; }
+    grid.style.display = "grid"; empty.style.display = "none";
+    window._prods = lista;
+    grid.innerHTML = lista.map((p, i) => {
+      const imgs = p.imagenes || (p.imageUrl ? [p.imageUrl] : []);
+      const img0 = imgs[0] || "";
+      return `<div class="prod-card" data-i="${i}">
+        <div class="prod-img" style="${img0 ? 'background-image:url('+JSON.stringify(img0)+')' : ''}">
+          ${!img0 ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="color:var(--texto-3)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' : ""}
+          ${imgs.length > 1 ? '<div class="prod-multi-badge">'+imgs.length+' fotos</div>' : ""}
+          <div class="prod-overlay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Ver detalle
+          </div>
+        </div>
+        <div class="prod-body">
+          <div class="prod-titulo">${p.titulo||""}</div>
+          ${p.descripcion ? '<div class="prod-desc">'+p.descripcion+'</div>' : ""}
+          <div class="prod-precio">$${Number(p.precio||0).toLocaleString("es-AR")}</div>
+        </div>
+      </div>`;
+    }).join("");
 
-// ── Demo data ──
-function mostrarDemo() {
-  renderNegocio({
-    nombre:      "Vero Pastelería",
-    categoria:   "Postres",
-    localidad:   "Resistencia, Chaco",
-    direccion:   "Av. Sarmiento 1240, B° Centro",
-    descripcion: "Postres y tortas artesanales para todos tus eventos. Elaborados con ingredientes de calidad y mucho amor.",
-    horarios:    { dias: ["Lun", "Mar", "Mié", "Jue", "Vie"], apertura: "9:00", cierre: "19:00" },
-    whatsapp:    "3624000000",
-    instagram:   "@veropasteleria"
-  }, [
-    { titulo:"Tarta de Frutos Rojos",  descripcion:"Masa de manteca, crema pastelera y frutos rojos frescos", precio:4500, imagenes:[] },
-    { titulo:"Brownie de Chocolate",   descripcion:"Húmedo, con chips de chocolate y nueces tostadas",        precio:1800, imagenes:[] },
-    { titulo:"Torta Personalizada",    descripcion:"Diseño a pedido para cumpleaños y eventos",               precio:8000, imagenes:[] },
-    { titulo:"Alfajores Artesanales",  descripcion:"Pack x6 - Rellenos de dulce de leche",                   precio:2200, imagenes:[] },
-  ]);
-}
-
-// ── Cargar negocio ──
-async function cargar() {
-  const slug = new URLSearchParams(window.location.search).get("slug");
-  if (!slug) { mostrarDemo(); return; }
-
-  try {
-    const q    = query(collection(db, "negocios"), where("slug", "==", slug));
-    const snap = await getDocs(q);
-    if (snap.empty) { mostrarDemo(); return; }
-
-    const negocio = { id: snap.docs[0].id, ...snap.docs[0].data() };
-
-    const pubQ = query(
-      collection(db, "publicaciones"),
-      where("negocioId", "==", negocio.id),
-      where("aprobado", "==", true)
-    );
-    const pubs     = await getDocs(pubQ);
-    const productos = pubs.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    renderNegocio(negocio, productos);
-  } catch(e) {
-    console.error(e);
-    mostrarDemo();
+    grid.querySelectorAll(".prod-card").forEach(c => {
+      c.addEventListener("click", () => {
+        const p = window._prods[parseInt(c.dataset.i)];
+        abrirLightbox(p.imagenes || (p.imageUrl ? [p.imageUrl] : []), p.titulo, p.descripcion, p.precio);
+      });
+    });
   }
-}
 
-cargar();
+  function mostrarSinNegocio() {
+    document.getElementById("negNombre").textContent = "Negocio no encontrado";
+    document.getElementById("negNombreBread").textContent = "No encontrado";
+    document.getElementById("negAvatarTexto").textContent = "?";
+    document.title = "Negocio no encontrado — PuntoChaco";
+    const grid = document.getElementById("gridProductos");
+    const empty = document.getElementById("sinProductos");
+    grid.style.display = "none";
+    empty.style.display = "flex";
+    empty.querySelector("h3").textContent = "Negocio no encontrado";
+    empty.querySelector("p").textContent = "El negocio que buscás no existe o fue eliminado.";
+  }
+
+
+  // ── SEGUIR / DEJAR DE SEGUIR ──
+  let _usuarioUid = null;
+  let _siguiendo  = false;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+    _usuarioUid = user.uid;
+    try {
+      const snap = await getDoc(doc(db, "usuarios", user.uid));
+      if (!snap.exists()) return;
+      const d = snap.data();
+      const destino = d.rol === "admin" ? "admin.html" : "dashboard.html";
+      document.getElementById("navAcciones").innerHTML =
+        (d.rol !== "comprador" ? `<a href="${destino}" class="btn btn-ghost" style="gap:7px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Mi panel</a>` : "") +
+        `<span style="font-size:13px;color:var(--texto-2);font-weight:600;">Hola, ${d.nombre}</span>`;
+    } catch(e) {}
+
+    // Botón seguir
+    setTimeout(async () => {
+      const negId = window._negocioId;
+      if (!negId || user.uid === negId) return;
+      const btn = document.getElementById("btnSeguir");
+      if (btn) btn.style.display = "inline-flex";
+      try {
+        const segSnap = await getDoc(doc(db, "seguidores", negId + "_" + user.uid));
+        _siguiendo = segSnap.exists();
+        actualizarBtnSeguir();
+      } catch(e) {}
+    }, 1200);
+  });
+
+  function actualizarBtnSeguir() {
+    const btn = document.getElementById("btnSeguir");
+    if (!btn) return;
+    if (_siguiendo) {
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg> Siguiendo`;
+      btn.style.cssText += ";background:var(--verde-suave);color:var(--verde);border-color:var(--verde);";
+    } else {
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Seguir`;
+      btn.style.cssText += ";background:var(--celeste);color:white;border-color:var(--celeste);";
+    }
+  }
+
+  window.toggleSeguir = async function() {
+    if (!_usuarioUid) { window.location.href = "login.html"; return; }
+    const negId = window._negocioId;
+    if (!negId) return;
+    const btn = document.getElementById("btnSeguir");
+    if(btn) btn.disabled = true;
+    try {
+      const segRef = doc(db, "seguidores", negId + "_" + _usuarioUid);
+      const negRef = doc(db, "negocios", negId);
+      if (_siguiendo) {
+        await deleteDoc(segRef);
+        const nuevos = Math.max(0,(window._negocioData.seguidores||1)-1);
+        await updateDoc(negRef, { seguidores: nuevos });
+        window._negocioData.seguidores = nuevos;
+        document.getElementById("pubSeguidores").textContent = nuevos;
+        _siguiendo = false;
+      } else {
+        await setDoc(segRef, { negocioId:negId, usuarioId:_usuarioUid, fecha:new Date().toISOString() });
+        const nuevos = (window._negocioData.seguidores||0)+1;
+        await updateDoc(negRef, { seguidores: nuevos });
+        window._negocioData.seguidores = nuevos;
+        document.getElementById("pubSeguidores").textContent = nuevos;
+        _siguiendo = true;
+      }
+      actualizarBtnSeguir();
+    } catch(e) { console.error(e); }
+    if(btn) btn.disabled = false;
+  };
+
+  cargar();
 </script>
 </body>
 </html>
