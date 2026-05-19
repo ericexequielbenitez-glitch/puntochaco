@@ -83,7 +83,9 @@
 
     const estadoEl = document.getElementById("estadoNegocio");
     if (estadoEl) {
-      if (negocioActual?.aprobado) {
+      // Firestore puede guardar como booleano true o string "true"
+      const aprobado = negocioActual?.aprobado === true || negocioActual?.aprobado === "true";
+      if (aprobado) {
         estadoEl.textContent = "Aprobado";
         estadoEl.className = "estado-badge aprobado";
       } else {
@@ -102,17 +104,44 @@
   }
 
   async function cargarPublicaciones() {
-    const q = query(collection(db, "publicaciones"),
-                    where("propietarioId", "==", usuarioActual.uid));
-    const snap = await getDocs(q);
-    publicaciones = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Buscar por propietarioId (forma nueva) Y negocioId (forma alternativa)
+    let todasPubs = [];
+    try {
+      const q1 = query(collection(db, "publicaciones"),
+                       where("propietarioId", "==", usuarioActual.uid));
+      const snap1 = await getDocs(q1);
+      todasPubs = snap1.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(e) {}
+
+    // Si no encontró nada, intentar por negocioId
+    if (todasPubs.length === 0 && negocioActual?.id) {
+      try {
+        const q2 = query(collection(db, "publicaciones"),
+                         where("negocioId", "==", negocioActual.id));
+        const snap2 = await getDocs(q2);
+        todasPubs = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch(e) {}
+    }
+
+    publicaciones = todasPubs;
+    window.publicaciones = publicaciones;
     renderPublicaciones();
-    document.getElementById("contadorPubs").textContent = publicaciones.length;
-    document.getElementById("limitePubs").textContent   = `${publicaciones.length}/10`;
-    const pct = (publicaciones.length / 10) * 100;
-    document.getElementById("barraLimite").style.width = pct + "%";
-    document.getElementById("barraLimite").style.background =
-      pct >= 100 ? "var(--error)" : pct >= 70 ? "#FF9500" : "var(--verde)";
+
+    const count = publicaciones.length;
+    const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    setTxt("contadorPubs", count);
+    setTxt("limitePubs",   `${count}/10`);
+    setTxt("limitePubs2",  `${count}/10`);
+    setTxt("dashPubs",     count);
+
+    const pct = (count / 10) * 100;
+    ["barraLimite","barraLimite2"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.width = pct + "%";
+        el.style.background = pct >= 100 ? "var(--error)" : pct >= 70 ? "#FF9500" : "var(--verde)";
+      }
+    });
   }
 
   function renderPublicaciones() {
