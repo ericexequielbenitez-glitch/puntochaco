@@ -292,23 +292,12 @@ nav{position:sticky;top:0;z-index:50;height:64px;background:rgba(255,255,255,0.9
       const snap = await getDocs(query(collection(db, "negocios"), where("aprobado", "==", true)));
       todosNegocios = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     } catch(e) {
-      // Si falla, mostrar demo
-      todosNegocios = generarDemo();
+      todosNegocios = [];
     }
     construirFiltros();
     renderNegocios();
   }
 
-  function generarDemo() {
-    return [
-      { id:"1", nombre:"Vero Pastelería", categoria:"Postres", localidad:"Resistencia", whatsapp:"3624000001", slug:"vero-pasteleria" },
-      { id:"2", nombre:"Black Barber", categoria:"Barbería", localidad:"Sáenz Peña", whatsapp:"3624000002", slug:"black-barber" },
-      { id:"3", nombre:"Nails & More", categoria:"Manicuría", localidad:"Fontana", whatsapp:"3624000003", slug:"nails-more" },
-      { id:"4", nombre:"Tech Chaco", categoria:"Tecnología", localidad:"Resistencia", whatsapp:"3624000004", slug:"tech-chaco" },
-      { id:"5", nombre:"Foto Artística", categoria:"Fotografía", localidad:"Resistencia", whatsapp:"3624000005", slug:"foto-artistica" },
-      { id:"6", nombre:"Carnicería El Campo", categoria:"Carnicería", localidad:"Charata", whatsapp:"3624000006", slug:"carniceria-el-campo" },
-    ];
-  }
 
   function construirFiltros() {
     const conteo = {};
