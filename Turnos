@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reservar turno — PuntoChaco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blanco:#FFFFFF; --fondo:#F4F9FC; --fondo-2:#EBF5FB;
+  --celeste:#5BADD6; --celeste-claro:#C8E6F5; --celeste-suave:#EBF5FC;
+  --verde:#3A8F5A; --verde-suave:#EAF5EF;
+  --texto:#1A2B4A; --texto-2:#3A5A72; --texto-3:#7A9BB0;
+  --borde:#D8EBF5; --borde-2:#C2DCF0;
+  --error:#FF3B3B;
+  --r-sm:10px; --r-md:16px; --r-lg:24px;
+  --sombra:0 4px 20px rgba(42,172,226,0.08);
+  --sombra-lg:0 16px 48px rgba(42,172,226,0.14);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--fondo);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh;}
+
+nav{position:sticky;top:0;z-index:50;height:64px;background:rgba(255,255,255,0.96);backdrop-filter:blur(16px);border-bottom:1.5px solid var(--borde);display:flex;align-items:center;justify-content:space-between;padding:0 32px;}
+.nav-logo{display:flex;align-items:center;text-decoration:none;}
+.nav-logo img{height:48px;width:auto;}
+
+.page-wrap{max-width:760px;margin:0 auto;padding:32px 24px 80px;}
+
+/* NEGOCIO HEADER */
+.negocio-header{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);padding:20px 24px;display:flex;align-items:center;gap:16px;margin-bottom:24px;box-shadow:var(--sombra);}
+.neg-avatar-sm{width:56px;height:56px;border-radius:var(--r-sm);background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--blanco);flex-shrink:0;background-size:cover;background-position:center;}
+.neg-info-sm h2{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;}
+.neg-info-sm p{font-size:13px;color:var(--texto-3);margin-top:2px;}
+
+/* STEPS */
+.steps{display:flex;align-items:center;gap:0;margin-bottom:28px;background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;}
+.step{flex:1;padding:14px 16px;text-align:center;position:relative;border-right:1px solid var(--borde);transition:all 0.2s;}
+.step:last-child{border-right:none;}
+.step.activo{background:var(--celeste-suave);}
+.step.completado{background:var(--verde-suave);}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--borde);color:var(--texto-3);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;}
+.step.activo .step-num{background:var(--celeste);color:var(--blanco);}
+.step.completado .step-num{background:var(--verde);color:var(--blanco);}
+.step-lbl{font-size:11px;font-weight:600;color:var(--texto-3);}
+.step.activo .step-lbl{color:var(--celeste);}
+.step.completado .step-lbl{color:var(--verde);}
+
+/* CARD */
+.card{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;box-shadow:var(--sombra);}
+.card-header{padding:16px 20px;border-bottom:1.5px solid var(--borde);background:var(--fondo);display:flex;align-items:center;gap:10px;}
+.card-header svg{width:18px;height:18px;stroke:var(--celeste);}
+.card-header span{font-size:14px;font-weight:700;color:var(--texto);}
+.card-body{padding:20px;}
+
+/* CALENDARIO */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.cal-mes{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;}
+.cal-btn{width:36px;height:36px;border:1.5px solid var(--borde);border-radius:50%;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;color:var(--texto-2);}
+.cal-btn:hover{border-color:var(--celeste);color:var(--celeste);background:var(--celeste-suave);}
+.cal-btn svg{width:16px;height:16px;}
+
+.cal-dias-semana{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;}
+.cal-dia-lbl{text-align:center;font-size:11px;font-weight:700;color:var(--texto-3);text-transform:uppercase;letter-spacing:0.06em;padding:4px 0;}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-dia{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  border-radius:var(--r-sm);font-size:14px;font-weight:500;
+  cursor:pointer;border:1.5px solid transparent;transition:all 0.2s;
+  position:relative;
+}
+.cal-dia:hover:not(.disabled):not(.pasado){background:var(--celeste-suave);border-color:var(--celeste-claro);color:var(--celeste);}
+.cal-dia.disponible{color:var(--texto);}
+.cal-dia.seleccionado{background:var(--celeste);color:var(--blanco);border-color:var(--celeste);font-weight:700;}
+.cal-dia.disabled,.cal-dia.pasado{color:var(--borde-2);cursor:not-allowed;background:transparent;}
+.cal-dia.sin-disponibilidad{color:var(--texto-3);cursor:not-allowed;}
+.cal-dia.hoy::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--celeste);}
+.cal-dia.seleccionado.hoy::after{background:var(--blanco);}
+
+/* HORARIOS */
+.horarios-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;}
+.horario-slot{
+  padding:10px 8px;text-align:center;border-radius:var(--r-sm);
+  border:1.5px solid var(--borde);font-size:14px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;color:var(--texto-2);
+  background:var(--fondo);
+}
+.horario-slot:hover:not(.ocupado){border-color:var(--celeste);color:var(--celeste);background:var(--celeste-suave);}
+.horario-slot.seleccionado{background:var(--celeste);color:var(--blanco);border-color:var(--celeste);}
+.horario-slot.ocupado{background:var(--fondo-2);color:var(--borde-2);cursor:not-allowed;border-color:transparent;}
+
+/* RESUMEN */
+.resumen-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--borde);}
+.resumen-item:last-child{border-bottom:none;}
+.resumen-icono{width:36px;height:36px;border-radius:var(--r-sm);background:var(--celeste-suave);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.resumen-icono svg{width:16px;height:16px;stroke:var(--celeste);}
+.resumen-lbl{font-size:12px;color:var(--texto-3);margin-bottom:2px;}
+.resumen-val{font-size:14px;font-weight:600;color:var(--texto);}
+
+/* FORM */
+.grupo{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+label{font-size:13px;font-weight:600;color:var(--texto-2);}
+input[type="text"],input[type="tel"],input[type="email"],textarea{
+  width:100%;height:44px;padding:0 14px;
+  background:var(--fondo);border:1.5px solid transparent;
+  border-radius:var(--r-sm);
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:var(--texto);
+  outline:none;transition:all 0.2s;
+}
+input:focus{border-color:var(--celeste);background:var(--blanco);box-shadow:0 0 0 3px rgba(91,173,214,0.1);}
+textarea{height:80px;padding:10px 14px;resize:none;}
+
+/* BOTONES */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:0 22px;height:46px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;border:none;transition:all 0.2s;white-space:nowrap;}
+.btn-celeste{background:var(--celeste);color:var(--blanco);box-shadow:0 4px 14px rgba(91,173,214,0.3);}
+.btn-celeste:hover{background:#4A9DC6;transform:translateY(-1px);}
+.btn-celeste:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.btn-ghost{background:transparent;color:var(--texto-2);border:1.5px solid var(--borde-2);}
+.btn-ghost:hover{border-color:var(--celeste);color:var(--celeste);}
+.btn-full{width:100%;justify-content:center;}
+
+/* ÉXITO */
+.exito-wrap{text-align:center;padding:40px 20px;}
+.exito-icon{width:80px;height:80px;border-radius:50%;background:var(--verde-suave);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;animation:popIn 0.4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+.exito-icon svg{width:36px;height:36px;stroke:var(--verde);}
+.exito-wrap h2{font-family:'Playfair Display',serif;font-size:24px;margin-bottom:8px;}
+.exito-wrap p{font-size:15px;color:var(--texto-2);line-height:1.6;}
+
+/* LOADING */
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,0.8);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.loading-overlay.show{display:flex;}
+.spinner{width:36px;height:36px;border:3px solid var(--celeste-claro);border-top-color:var(--celeste);border-radius:50%;animation:girar 0.8s linear infinite;}
+@keyframes girar{to{transform:rotate(360deg);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);padding:11px 22px;border-radius:100px;font-size:14px;font-weight:600;opacity:0;transition:all 0.3s;z-index:500;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{background:var(--texto);color:var(--blanco);}
+.toast.error{background:var(--error);color:var(--blanco);}
+
+@media(max-width:600px){
+  nav{padding:0 16px;}
+  .page-wrap{padding:20px 16px 60px;}
+  .steps{flex-wrap:nowrap;}
+  .step-lbl{font-size:9px;}
+  .horarios-grid{grid-template-columns:repeat(3,1fr);}
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p style="font-size:14px;color:var(--texto-3);">Procesando...</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco">
+  </a>
+  <a href="javascript:history.back()" style="font-size:13px;color:var(--texto-3);text-decoration:none;display:flex;align-items:center;gap:6px;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+    Volver
+  </a>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- NEGOCIO INFO -->
+  <div class="negocio-header" id="negocioHeader">
+    <div class="neg-avatar-sm" id="turnoAvatar">?</div>
+    <div class="neg-info-sm">
+      <h2 id="turnoNombre">Cargando...</h2>
+      <p id="turnoCat">Servicio</p>
+    </div>
+  </div>
+
+  <!-- STEPS -->
+  <div class="steps">
+    <div class="step activo" id="step1">
+      <div class="step-num">1</div>
+      <div class="step-lbl">Elegí fecha</div>
+    </div>
+    <div class="step" id="step2">
+      <div class="step-num">2</div>
+      <div class="step-lbl">Elegí horario</div>
+    </div>
+    <div class="step" id="step3">
+      <div class="step-num">3</div>
+      <div class="step-lbl">Tus datos</div>
+    </div>
+    <div class="step" id="step4">
+      <div class="step-num">4</div>
+      <div class="step-lbl">Confirmá</div>
+    </div>
+  </div>
+
+  <!-- PASO 1: CALENDARIO -->
+  <div id="panelPaso1">
+    <div class="card">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span>Seleccioná una fecha</span>
+      </div>
+      <div class="card-body">
+        <div class="cal-nav">
+          <button class="cal-btn" onclick="cambiarMes(-1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="cal-mes" id="calMes"></div>
+          <button class="cal-btn" onclick="cambiarMes(1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="cal-dias-semana">
+          <div class="cal-dia-lbl">Dom</div><div class="cal-dia-lbl">Lun</div>
+          <div class="cal-dia-lbl">Mar</div><div class="cal-dia-lbl">Mié</div>
+          <div class="cal-dia-lbl">Jue</div><div class="cal-dia-lbl">Vie</div>
+          <div class="cal-dia-lbl">Sáb</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="btn btn-celeste" id="btnPaso1" onclick="irPaso2()" disabled>
+        Continuar
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- PASO 2: HORARIOS -->
+  <div id="panelPaso2" style="display:none;">
+    <div class="card">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="labelFechaSeleccionada">Horarios disponibles</span>
+      </div>
+      <div class="card-body">
+        <div class="horarios-grid" id="horariosGrid"></div>
+        <div id="sinHorarios" style="display:none;text-align:center;padding:32px;color:var(--texto-3);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36" style="margin-bottom:10px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+          <p>No hay horarios disponibles para este día.</p>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="irPaso1()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver
+      </button>
+      <button class="btn btn-celeste" id="btnPaso2" onclick="irPaso3()" disabled>
+        Continuar
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- PASO 3: DATOS CLIENTE -->
+  <div id="panelPaso3" style="display:none;">
+    <div class="card">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Tus datos de contacto</span>
+      </div>
+      <div class="card-body">
+        <div class="grupo">
+          <label for="clienteNombre">Nombre completo *</label>
+          <input type="text" id="clienteNombre" placeholder="Tu nombre y apellido">
+        </div>
+        <div class="grupo">
+          <label for="clienteTel">WhatsApp *</label>
+          <input type="tel" id="clienteTel" placeholder="+54 362 ...">
+        </div>
+        <div class="grupo">
+          <label for="clienteNota">Nota (opcional)</label>
+          <textarea id="clienteNota" placeholder="¿Algún detalle para el servicio?"></textarea>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="irPaso2()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver
+      </button>
+      <button class="btn btn-celeste" onclick="irPaso4()">
+        Continuar
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- PASO 4: CONFIRMACIÓN -->
+  <div id="panelPaso4" style="display:none;">
+    <div class="card">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>Confirmá tu reserva</span>
+      </div>
+      <div class="card-body">
+        <div class="resumen-item">
+          <div class="resumen-icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+          <div><div class="resumen-lbl">Negocio</div><div class="resumen-val" id="resNegocio">-</div></div>
+        </div>
+        <div class="resumen-item">
+          <div class="resumen-icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+          <div><div class="resumen-lbl">Fecha</div><div class="resumen-val" id="resFecha">-</div></div>
+        </div>
+        <div class="resumen-item">
+          <div class="resumen-icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div><div class="resumen-lbl">Horario</div><div class="resumen-val" id="resHorario">-</div></div>
+        </div>
+        <div class="resumen-item">
+          <div class="resumen-icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+          <div><div class="resumen-lbl">Tu nombre</div><div class="resumen-val" id="resNombre">-</div></div>
+        </div>
+        <div class="resumen-item">
+          <div class="resumen-icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13"/></svg></div>
+          <div><div class="resumen-lbl">WhatsApp</div><div class="resumen-val" id="resTel">-</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--celeste-suave);border:1.5px solid var(--celeste-claro);border-radius:var(--r-md);padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--texto-2);line-height:1.6;">
+      <strong>Importante:</strong> Al confirmar, el negocio recibirá tu solicitud. Te contactarán por WhatsApp para confirmarte el turno.
+    </div>
+
+    <div style="display:flex;justify-content:space-between;gap:12px;">
+      <button class="btn btn-ghost" onclick="irPaso3()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver
+      </button>
+      <button class="btn btn-celeste btn-full" onclick="confirmarTurno()" id="btnConfirmar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>
+        Confirmar reserva
+      </button>
+    </div>
+  </div>
+
+  <!-- PASO 5: ÉXITO -->
+  <div id="panelExito" style="display:none;">
+    <div class="card">
+      <div class="exito-wrap">
+        <div class="exito-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2>¡Reserva confirmada!</h2>
+        <p style="margin-bottom:8px;">Tu solicitud fue enviada correctamente.</p>
+        <p><strong id="exitoNegocio"></strong> te va a contactar por WhatsApp para confirmar tu turno.</p>
+        <div style="margin-top:24px;padding:16px;background:var(--fondo);border-radius:var(--r-md);text-align:left;">
+          <div style="font-size:13px;color:var(--texto-3);margin-bottom:4px;">Tu turno solicitado</div>
+          <div style="font-size:15px;font-weight:700;" id="exitoResumen"></div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap;">
+          <a href="index.html" class="btn btn-ghost">Ir al inicio</a>
+          <button onclick="window.location.reload()" class="btn btn-celeste">Hacer otra reserva</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyCibGsSHDHn6c8VXLzUlqeKXpaxibfpVuc",
+  authDomain:"chacoemprende-df731.firebaseapp.com",
+  projectId:"chacoemprende-df731",
+  storageBucket:"chacoemprende-df731.firebasestorage.app",
+  messagingSenderId:"871612466602",
+  appId:"1:871612466602:web:fe62a4f01c38d5b2c417d3"
+});
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// Estado global
+let negocio       = null;
+let configTurnos  = null;
+let turnosOcupados = [];
+let fechaSeleccionada = null;
+let horarioSeleccionado = null;
+let usuarioLogueado = null;
+
+let calAnio = new Date().getFullYear();
+let calMes  = new Date().getMonth();
+
+const DIAS_MAP = { 0:'Dom',1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb' };
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// Auth
+onAuthStateChanged(auth, user => { usuarioLogueado = user; });
+
+// Cargar negocio desde URL
+const params = new URLSearchParams(window.location.search);
+const slug   = params.get('slug');
+
+async function init() {
+  if (!slug) { mostrarError('No se especificó el negocio.'); return; }
+
+  // Buscar negocio
+  try {
+    const q    = query(collection(db, 'negocios'), where('slug','==',slug));
+    const snap = await getDocs(q);
+    if (snap.empty) { mostrarError('Negocio no encontrado.'); return; }
+    negocio = { id: snap.docs[0].id, ...snap.docs[0].data() };
+  } catch(e) { mostrarError('Error cargando negocio.'); return; }
+
+  // Mostrar info negocio
+  document.getElementById('turnoNombre').textContent = negocio.nombre || '';
+  document.getElementById('turnoCat').textContent    = negocio.categoria || 'Servicio';
+  document.getElementById('resNegocio').textContent  = negocio.nombre || '';
+  document.title = `Reservar turno — ${negocio.nombre}`;
+  if (negocio.logoUrl) {
+    const av = document.getElementById('turnoAvatar');
+    av.style.backgroundImage = `url('${negocio.logoUrl}')`;
+    av.textContent = '';
+  } else {
+    document.getElementById('turnoAvatar').textContent = (negocio.nombre||'?')[0].toUpperCase();
+  }
+
+  // Cargar config de turnos
+  try {
+    const cfgSnap = await getDoc(doc(db, 'configTurnos', negocio.id));
+    if (cfgSnap.exists()) configTurnos = cfgSnap.data();
+  } catch(e) {}
+
+  // Si no tiene config, usar horarios del negocio como fallback
+  if (!configTurnos) {
+    configTurnos = {
+      diasDisponibles: negocio.horarios?.dias || ['Lun','Mar','Mié','Jue','Vie'],
+      horaInicio: negocio.horarios?.apertura || '09:00',
+      horaFin:    negocio.horarios?.cierre   || '18:00',
+      duracion:   60,
+      maxPorDia:  8,
+      activo:     true
+    };
+  }
+
+  renderCalendario();
+}
+
+// ── CALENDARIO ──
+window.cambiarMes = function(dir) {
+  calMes += dir;
+  if (calMes > 11) { calMes = 0; calAnio++; }
+  if (calMes < 0)  { calMes = 11; calAnio--; }
+  renderCalendario();
+};
+
+function renderCalendario() {
+  document.getElementById('calMes').textContent = `${MESES[calMes]} ${calAnio}`;
+  const grid  = document.getElementById('calGrid');
+  const hoy   = new Date();
+  hoy.setHours(0,0,0,0);
+
+  const primerDia = new Date(calAnio, calMes, 1).getDay();
+  const diasMes   = new Date(calAnio, calMes+1, 0).getDate();
+
+  let html = '';
+  // Celdas vacías al inicio
+  for (let i = 0; i < primerDia; i++) html += '<div class="cal-dia"></div>';
+
+  for (let d = 1; d <= diasMes; d++) {
+    const fecha = new Date(calAnio, calMes, d);
+    fecha.setHours(0,0,0,0);
+    const diaSemana = DIAS_MAP[fecha.getDay()];
+    const esHoy = fecha.getTime() === hoy.getTime();
+    const esPasado = fecha < hoy;
+    const disponible = configTurnos?.diasDisponibles?.includes(diaSemana);
+    const fechaStr  = `${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const esSeleccionado = fechaSeleccionada === fechaStr;
+
+    let clases = 'cal-dia';
+    if (esHoy) clases += ' hoy';
+    if (esPasado) clases += ' pasado';
+    else if (!disponible) clases += ' sin-disponibilidad';
+    else clases += ' disponible';
+    if (esSeleccionado) clases += ' seleccionado';
+
+    const clickable = !esPasado && disponible;
+    html += `<div class="${clases}" ${clickable ? `onclick="seleccionarFecha('${fechaStr}')"` : ''}>${d}</div>`;
+  }
+  grid.innerHTML = html;
+}
+
+window.seleccionarFecha = function(fechaStr) {
+  fechaSeleccionada = fechaStr;
+  horarioSeleccionado = null;
+  document.getElementById('btnPaso1').disabled = false;
+  renderCalendario();
+};
+
+// ── PASO 2: HORARIOS ──
+async function cargarHorarios() {
+  const grid = document.getElementById('horariosGrid');
+  const sinH = document.getElementById('sinHorarios');
+  grid.innerHTML = '';
+
+  // Generar slots según config
+  const slots = generarSlots(configTurnos.horaInicio, configTurnos.horaFin, configTurnos.duracion || 60);
+
+  // Buscar turnos ya ocupados para esta fecha
+  try {
+    const q = query(collection(db, 'turnos'),
+                    where('negocioId','==', negocio.id),
+                    where('fecha','==', fechaSeleccionada),
+                    where('estado','!=','cancelado'));
+    const snap = await getDocs(q);
+    turnosOcupados = snap.docs.map(d => d.data().horario);
+  } catch(e) { turnosOcupados = []; }
+
+  if (!slots.length) { sinH.style.display='block'; return; }
+  sinH.style.display = 'none';
+
+  grid.innerHTML = slots.map(slot => {
+    const ocupado = turnosOcupados.includes(slot);
+    const sel = horarioSeleccionado === slot;
+    return `<div class="horario-slot ${ocupado?'ocupado':''} ${sel?'seleccionado':''}"
+      ${!ocupado ? `onclick="seleccionarHorario('${slot}')"` : ''}>${slot}</div>`;
+  }).join('');
+}
+
+function generarSlots(inicio, fin, duracionMin) {
+  const slots = [];
+  let [h, m] = inicio.split(':').map(Number);
+  const [hFin, mFin] = fin.split(':').map(Number);
+  const minFin = hFin * 60 + mFin;
+
+  while (h * 60 + m < minFin) {
+    slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+    m += duracionMin;
+    if (m >= 60) { h += Math.floor(m/60); m = m % 60; }
+  }
+  return slots;
+}
+
+window.seleccionarHorario = function(slot) {
+  horarioSeleccionado = slot;
+  document.getElementById('btnPaso2').disabled = false;
+  cargarHorarios();
+};
+
+// ── NAVEGACIÓN PASOS ──
+function mostrarPaso(n) {
+  ['panelPaso1','panelPaso2','panelPaso3','panelPaso4','panelExito'].forEach((id,i) => {
+    document.getElementById(id).style.display = (i === n-1) ? 'block' : 'none';
+  });
+  ['step1','step2','step3','step4'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.className = 'step';
+    if (i+1 < n)   el.classList.add('completado');
+    if (i+1 === n) el.classList.add('activo');
+  });
+}
+
+window.irPaso1 = () => mostrarPaso(1);
+
+window.irPaso2 = async () => {
+  if (!fechaSeleccionada) return;
+  mostrarPaso(2);
+
+  // Label de fecha
+  const f = new Date(fechaSeleccionada + 'T12:00:00');
+  const opciones = { weekday:'long', day:'numeric', month:'long' };
+  document.getElementById('labelFechaSeleccionada').textContent =
+    'Horarios para el ' + f.toLocaleDateString('es-AR', opciones);
+
+  await cargarHorarios();
+};
+
+window.irPaso3 = () => {
+  if (!horarioSeleccionado) return;
+  // Pre-rellenar si está logueado
+  if (usuarioLogueado) {
+    // Intentar cargar nombre
+  }
+  mostrarPaso(3);
+};
+
+window.irPaso4 = () => {
+  const nombre = document.getElementById('clienteNombre').value.trim();
+  const tel    = document.getElementById('clienteTel').value.trim();
+  if (!nombre) { mostrarToast('Ingresá tu nombre', 'error'); return; }
+  if (!tel)    { mostrarToast('Ingresá tu WhatsApp', 'error'); return; }
+
+  // Llenar resumen
+  const f = new Date(fechaSeleccionada + 'T12:00:00');
+  const fechaLinda = f.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('resFecha').textContent   = fechaLinda;
+  document.getElementById('resHorario').textContent = horarioSeleccionado;
+  document.getElementById('resNombre').textContent  = nombre;
+  document.getElementById('resTel').textContent     = tel;
+
+  mostrarPaso(4);
+};
+
+window.confirmarTurno = async function() {
+  const btn = document.getElementById('btnConfirmar');
+  btn.disabled = true;
+  btn.textContent = 'Confirmando...';
+  document.getElementById('loadingOverlay').classList.add('show');
+
+  const nombre = document.getElementById('clienteNombre').value.trim();
+  const tel    = document.getElementById('clienteTel').value.trim();
+  const nota   = document.getElementById('clienteNota').value.trim();
+
+  try {
+    await addDoc(collection(db, 'turnos'), {
+      negocioId:    negocio.id,
+      negocioNombre: negocio.nombre,
+      negocioSlug:  negocio.slug || '',
+      clienteNombre: nombre,
+      clienteTel:   tel,
+      clienteNota:  nota,
+      clienteUid:   usuarioLogueado?.uid || null,
+      fecha:        fechaSeleccionada,
+      horario:      horarioSeleccionado,
+      estado:       'pendiente',
+      creadoEn:     serverTimestamp()
+    });
+
+    document.getElementById('exitoNegocio').textContent = negocio.nombre;
+    const f = new Date(fechaSeleccionada + 'T12:00:00');
+    document.getElementById('exitoResumen').textContent =
+      f.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}) + ' a las ' + horarioSeleccionado;
+
+    document.getElementById('loadingOverlay').classList.remove('show');
+    mostrarPaso(5);
+    document.getElementById('panelExito').style.display = 'block';
+    document.getElementById('steps') // hide steps on success
+    document.querySelector('.steps').style.display = 'none';
+
+  } catch(err) {
+    document.getElementById('loadingOverlay').classList.remove('show');
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Confirmar reserva';
+    mostrarToast('Error al confirmar: ' + err.message, 'error');
+  }
+};
+
+function mostrarError(msg) {
+  document.querySelector('.page-wrap').innerHTML = `
+    <div style="text-align:center;padding:60px 20px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="1.5" width="48" height="48" style="margin-bottom:16px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <h2 style="font-family:'Playfair Display',serif;margin-bottom:8px;">Oops</h2>
+      <p style="color:var(--texto-2);">${msg}</p>
+      <a href="index.html" style="display:inline-flex;margin-top:20px;padding:0 24px;height:44px;background:var(--celeste);color:white;border-radius:100px;text-decoration:none;align-items:center;font-weight:600;">Volver al inicio</a>
+    </div>`;
+}
+
+function mostrarToast(msg, tipo='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${tipo}`;
+  setTimeout(() => t.className = 'toast', 3500);
+}
+
+init();
+</script>
+</body>
+</html>
