@@ -1069,57 +1069,66 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
 
         <!-- SECCIÓN MI NEGOCIO -->
         <div class="seccion" id="sec-negocio">
-          <div class="sec-titulo-wrap">
-            <div class="sec-titulo">Mi negocio</div>
-          </div>
 
-          <!-- PERFIL CARD con stats -->
-          <div class="perfil-card" style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;">
-            <div style="height:80px;background:linear-gradient(135deg,var(--celeste),var(--verde));"></div>
-            <div style="padding:0 24px 24px;">
-              <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:-36px;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
-                <div id="dashAvatarWrap" style="width:72px;height:72px;border-radius:var(--r-md);border:3px solid var(--blanco);background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--blanco);overflow:hidden;box-shadow:0 4px 16px rgba(42,172,226,0.2);flex-shrink:0;background-size:cover;background-position:center;">
-                  <span id="dashAvatarLetra">?</span>
+          <!-- PERFIL CARD -->
+          <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:24px;box-shadow:0 2px 12px rgba(42,172,226,0.06);">
+            <!-- Cover -->
+            <div style="height:90px;background:linear-gradient(135deg,var(--celeste) 0%,var(--verde) 100%);position:relative;">
+              <div style="position:absolute;bottom:-44px;left:24px;width:88px;height:88px;border-radius:var(--r-md);border:4px solid var(--blanco);overflow:hidden;background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--blanco);box-shadow:0 4px 16px rgba(0,0,0,0.15);" id="dashAvatarWrap">
+                <span id="dashAvatarLetra">?</span>
+              </div>
+            </div>
+            <!-- Info -->
+            <div style="padding:52px 24px 24px;">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:800;color:var(--texto);" id="dashNombre">-</div>
+                    <div id="dashVerificadoBadge" style="display:none;flex-shrink:0;">
+                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                        <circle cx="12" cy="12" r="11" fill="#5BADD6"/>
+                        <polyline points="7 12 10.5 15.5 17 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div style="font-size:13px;color:var(--texto-3);font-weight:500;" id="dashCategoria">-</div>
                 </div>
-                <!-- STATS seguidores -->
-                <div style="display:flex;gap:24px;padding-bottom:4px;">
+                <!-- Stats -->
+                <div style="display:flex;gap:28px;">
                   <div style="text-align:center;">
-                    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--texto);" id="dashSeguidores">0</div>
-                    <div style="font-size:11px;color:var(--texto-3);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Seguidores</div>
+                    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--celeste);" id="dashSeguidores">0</div>
+                    <div style="font-size:10px;color:var(--texto-3);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;margin-top:2px;">Seguidores</div>
                   </div>
                   <div style="text-align:center;">
-                    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--texto);" id="dashSiguiendo">0</div>
-                    <div style="font-size:11px;color:var(--texto-3);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Siguiendo</div>
-                  </div>
-                  <div style="text-align:center;">
-                    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--texto);" id="dashPubs">0</div>
-                    <div style="font-size:11px;color:var(--texto-3);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Publicaciones</div>
+                    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--verde);" id="dashPubs">0</div>
+                    <div style="font-size:10px;color:var(--texto-3);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;margin-top:2px;">Publicaciones</div>
                   </div>
                 </div>
               </div>
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;" id="dashNombre">-</div>
-                <!-- Badge verificado (solo si está verificado) -->
-                <div id="dashVerificadoBadge" style="display:none;">
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-                    <circle cx="12" cy="12" r="11" fill="#5BADD6"/>
-                    <polyline points="7 12 10.5 15.5 17 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
+              <!-- Ver perfil público -->
+              <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--borde);">
+                <a id="linkPerfilPublico" href="negocio.html" target="_blank"
+                  style="display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--celeste);font-weight:600;text-decoration:none;padding:7px 14px;border:1.5px solid var(--celeste-claro);border-radius:100px;background:var(--celeste-suave);transition:all 0.2s;"
+                  onmouseover="this.style.background='var(--celeste)';this.style.color='white'"
+                  onmouseout="this.style.background='var(--celeste-suave)';this.style.color='var(--celeste)'">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Ver mi perfil público
+                </a>
               </div>
-              <div style="font-size:13px;color:var(--texto-3);" id="dashCategoria">-</div>
             </div>
           </div>
 
           <!-- FORMULARIO EDICIÓN -->
-          <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);padding:28px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--texto-3);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--borde);">
-              Editar información del negocio
+          <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 2px 12px rgba(42,172,226,0.06);">
+            <!-- Header del formulario -->
+            <div style="padding:18px 24px;border-bottom:1.5px solid var(--borde);background:var(--fondo);display:flex;align-items:center;gap:10px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2" width="18" height="18"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <span style="font-size:14px;font-weight:700;color:var(--texto);">Editar información del negocio</span>
             </div>
 
-            <form id="formEditarNegocio" onsubmit="guardarDatosNegocio(event)" novalidate>
+            <form id="formEditarNegocio" onsubmit="guardarDatosNegocio(event)" novalidate style="padding:24px;">
 
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                 <div class="grupo">
                   <label for="editNombre">Nombre del negocio</label>
                   <div style="position:relative;">
@@ -1141,11 +1150,11 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
                 </div>
               </div>
 
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                 <div class="grupo">
                   <label for="editWhatsapp">WhatsApp</label>
                   <div style="position:relative;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--texto-3);pointer-events:none;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--texto-3);pointer-events:none;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13"/></svg>
                     <input type="tel" id="editWhatsapp" style="padding-left:38px;" placeholder="+54 362 ...">
                   </div>
                 </div>
@@ -1168,18 +1177,23 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
 
               <div class="grupo">
                 <label for="editDescripcion">Descripción del negocio</label>
-                <textarea id="editDescripcion" placeholder="Contales a tus clientes qué ofrecés..."></textarea>
+                <textarea id="editDescripcion" placeholder="Contales a tus clientes qué ofrecés..." style="min-height:90px;"></textarea>
               </div>
 
-              <!-- Logo -->
+              <!-- Logo upload -->
               <div class="grupo">
                 <label>Logo del negocio</label>
-                <label class="upload-area" for="editLogo" style="display:block;cursor:pointer;">
+                <label for="editLogo" style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--fondo);border:1.5px dashed var(--borde-2);border-radius:var(--r-md);cursor:pointer;transition:all 0.2s;"
+                  onmouseover="this.style.borderColor='var(--celeste)';this.style.background='var(--celeste-suave)'"
+                  onmouseout="this.style.borderColor='var(--borde-2)';this.style.background='var(--fondo)'">
                   <input type="file" id="editLogo" accept="image/*" onchange="previewEditLogo(this)" style="display:none;">
-                  <div id="editLogoPreviewWrap" style="display:none;margin-bottom:8px;">
-                    <img id="editLogoPreview" style="width:80px;height:80px;border-radius:var(--r-md);object-fit:cover;" alt="Logo">
+                  <div id="editLogoPreviewWrap" style="display:none;">
+                    <img id="editLogoPreview" style="width:56px;height:56px;border-radius:var(--r-sm);object-fit:cover;border:2px solid var(--borde);" alt="Logo">
                   </div>
-                  <p style="font-size:13px;color:var(--texto-3);" id="editLogoTexto">Hacé click para cambiar el logo</p>
+                  <div>
+                    <div style="font-size:13px;font-weight:600;color:var(--texto-2);" id="editLogoTexto">Hacé click para cambiar el logo</div>
+                    <div style="font-size:11px;color:var(--texto-3);margin-top:2px;">JPG, PNG o WEBP · Máx. 5MB</div>
+                  </div>
                 </label>
               </div>
 
@@ -1196,14 +1210,20 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
                   <label class="dia-toggle"><input type="checkbox" class="dia-check-edit" value="Dom"><div class="dia-inner">Dom</div></label>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                  <div class="grupo" style="margin-bottom:0;"><label style="font-size:12px;">Apertura</label><input type="time" id="editApertura" value="09:00" style="padding-left:12px;"></div>
-                  <div class="grupo" style="margin-bottom:0;"><label style="font-size:12px;">Cierre</label><input type="time" id="editCierre" value="18:00" style="padding-left:12px;"></div>
+                  <div class="grupo" style="margin-bottom:0;">
+                    <label style="font-size:12px;color:var(--texto-3);">Apertura</label>
+                    <input type="time" id="editApertura" value="09:00" style="padding-left:12px;">
+                  </div>
+                  <div class="grupo" style="margin-bottom:0;">
+                    <label style="font-size:12px;color:var(--texto-3);">Cierre</label>
+                    <input type="time" id="editCierre" value="18:00" style="padding-left:12px;">
+                  </div>
                 </div>
               </div>
 
-              <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:8px;border-top:1px solid var(--borde);margin-top:8px;">
-                <button type="submit" class="btn btn-celeste" id="btnGuardarNegocio">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+              <div style="display:flex;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--borde);margin-top:4px;">
+                <button type="submit" class="btn btn-celeste" id="btnGuardarNegocio" style="height:44px;padding:0 28px;font-size:14px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
                   Guardar cambios
                 </button>
               </div>
@@ -1260,6 +1280,10 @@ textarea { height:80px; padding:10px 14px; resize:vertical; }
     // Badge verificado
     const badge = document.getElementById('dashVerificadoBadge');
     if(badge) badge.style.display = n.verificado ? 'inline-flex' : 'none';
+
+    // Link perfil público
+    const linkPerfil = document.getElementById('linkPerfilPublico');
+    if(linkPerfil && n.slug) linkPerfil.href = `negocio.html?slug=${n.slug}`;
 
     // Logo preview
     if (n.logoUrl) {
