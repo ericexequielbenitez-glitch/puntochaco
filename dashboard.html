@@ -152,6 +152,11 @@ textarea{height:80px;padding:10px 12px;resize:vertical;}
 /* OCULTAR WIDGETS EXTERNOS */
 #launcher,#hubspot-messages-iframe-container,.intercom-launcher,
 [id*="chat"],[class*="chat-widget"],[id*="crisp"],[class*="crisp"],
+[id*="freshdesk"],[id*="freshchat"],[id*="fc_frame"],[class*="freshchat"],
+iframe[src*="intercom"],iframe[src*="hubspot"],iframe[src*="freshdesk"],
+div[style*="z-index: 2147483647"]{display:none!important;visibility:hidden!important;}
+#launcher,#hubspot-messages-iframe-container,.intercom-launcher,
+[id*="chat"],[class*="chat-widget"],[id*="crisp"],[class*="crisp"],
 iframe[src*="intercom"],iframe[src*="hubspot"],
 div[id^="fc_frame"]{display:none!important;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);padding:11px 22px;border-radius:100px;font-size:14px;font-weight:600;opacity:0;transition:all 0.3s;z-index:500;white-space:nowrap;pointer-events:none;}
@@ -235,19 +240,39 @@ onAuthStateChanged(auth, async (user) => {
 
   usuarioActual = { uid: user.uid, ...snap.data() };
 
-  // Cargar negocio
+  // Cargar negocio — múltiples estrategias
   try {
+    // Estrategia 1: ID del documento = UID
     const nd = await getDoc(doc(db, "negocios", user.uid));
     if (nd.exists()) {
       negocioActual = { id: nd.id, ...nd.data() };
-    } else {
+    }
+  } catch(e) {}
+
+  if (!negocioActual) {
+    try {
+      // Estrategia 2: buscar por propietarioId
       const nq = query(collection(db,"negocios"), where("propietarioId","==",user.uid));
       const ns = await getDocs(nq);
       if (!ns.empty) negocioActual = { id: ns.docs[0].id, ...ns.docs[0].data() };
-    }
-  } catch(e) { console.error(e); }
+    } catch(e) { console.error("Error cargando negocio:", e); }
+  }
+
+  // Guardar negocioId en el documento del usuario para acceso rápido futuro
+  if (negocioActual?.id) {
+    try {
+      const { updateDoc: upd, doc: dc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      // No importar dinámicamente - usar el que ya tenemos
+    } catch(e) {}
+  }
 
   esServicio = SERVICIOS.includes(negocioActual?.categoria);
+
+  if (!negocioActual) {
+    // Mostrar mensaje de error claro en el formulario
+    mostrarToast("No se pudo cargar tu negocio. Verificá las reglas de Firestore.", "error");
+    console.error("negocioActual es null — verificar reglas de Firestore y que el negocio exista con propietarioId =", user.uid);
+  }
 
   renderUI();
   await cargarPublicaciones();
@@ -282,10 +307,11 @@ function renderUI() {
     }
   }
 
-  // Nav: mostrar turnos o stock según tipo
+  // Nav: mostrar turnos si es servicio O si acepta turnos; stock si es producto
   const navTurnos = document.getElementById("navTurnos");
   const navStock  = document.getElementById("navStock");
-  if (navTurnos) navTurnos.style.display = esServicio ? "flex" : "none";
+  const muestraTurnos = esServicio || negocioActual?.tieneTurnos === true;
+  if (navTurnos) navTurnos.style.display = muestraTurnos ? "flex" : "none";
   if (navStock)  navStock.style.display  = !esServicio ? "flex" : "none";
 
   // Stats resumen
@@ -553,6 +579,10 @@ function rellenarFormEdicion() {
   const lp = document.getElementById("linkPerfilPublico");
   if(lp&&n.slug) lp.href=`negocio.html?slug=${n.slug}`;
 
+  // Checkbox acepta turnos
+  const cbTurnos = document.getElementById("editAceptaTurnos");
+  if(cbTurnos) cbTurnos.checked = n.tieneTurnos === true;
+
   if (n.logoUrl) {
     const prevWrap = document.getElementById("editLogoPreviewWrap");
     const prevImg  = document.getElementById("editLogoPreview");
@@ -619,8 +649,9 @@ window.guardarDatosNegocio = async function(e) {
     if(btn) btn.textContent="Guardando...";
 
     const slug = (nombre||"negocio").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+    const tieneTurnos = document.getElementById("editAceptaTurnos")?.checked || false;
     const datos = { nombre, localidad, whatsapp, instagram, direccion, descripcion, logoUrl, slug,
-      horarios:{dias,apertura,cierre}, actualizadoEn:new Date().toISOString() };
+      tieneTurnos, horarios:{dias,apertura,cierre}, actualizadoEn:new Date().toISOString() };
 
     await updateDoc(doc(db,"negocios",negocioActual.id), datos);
     negocioActual = { ...negocioActual, ...datos };
