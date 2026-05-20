@@ -20,6 +20,13 @@
 html{font-size:15px;scroll-behavior:smooth;}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--text-1);-webkit-font-smoothing:antialiased;}
 
+
+/* LOADING SIMPLE */
+#loadingOverlay{position:fixed;inset:0;background:#fff;z-index:400;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .3s;}
+#loadingOverlay.hide{opacity:0;pointer-events:none;}
+.ld-spinner{width:36px;height:36px;border:3px solid #e4e6eb;border-top-color:#3B9FD4;border-radius:50%;animation:ldSpin .7s linear infinite;}
+@keyframes ldSpin{to{transform:rotate(360deg)}}
+
 /* NAV */
 #topbar{position:sticky;top:0;z-index:100;height:56px;background:var(--w);border-bottom:1px solid var(--borde);display:flex;align-items:center;justify-content:space-between;padding:0 20px;box-shadow:var(--sh);}
 .tb-logo{display:flex;align-items:center;text-decoration:none;}
@@ -158,6 +165,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--te
 <body>
 
 <div class="toast" id="toast"></div>
+<div id="loadingOverlay">
+  <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="" style="height:52px;width:auto;">
+  <div class="ld-spinner"></div>
+</div>
+
 
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox">
@@ -196,43 +208,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--te
 </div>
 
 
-<!-- SKELETON mientras carga -->
-<div id="perfilSkeleton" style="background:#fff;border-bottom:1px solid #dddfe2;">
-  <div style="height:160px;background:#3B9FD4;"></div>
-  <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:0 0 16px;margin-top:-44px;">
-      <div style="width:88px;height:88px;border-radius:50%;border:4px solid #fff;background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;margin-top:-40px;"></div>
-    </div>
-    <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:22px;width:200px;border-radius:6px;margin-bottom:10px;"></div>
-    <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:14px;width:280px;border-radius:4px;margin-bottom:16px;"></div>
-    <div style="display:flex;gap:20px;margin-bottom:16px;">
-      <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:18px;width:60px;border-radius:4px;"></div>
-      <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:18px;width:80px;border-radius:4px;"></div>
-    </div>
-    <div style="display:flex;gap:8px;padding:12px 0;">
-      <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:36px;width:100px;border-radius:8px;"></div>
-      <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:36px;width:120px;border-radius:8px;"></div>
-    </div>
-    <div style="height:48px;border-top:1px solid #dddfe2;"></div>
-  </div>
-</div>
-<div id="pageBodySkeleton" style="max-width:1100px;margin:0 auto;padding:20px 24px;display:grid;grid-template-columns:1fr 300px;gap:20px;">
-  <div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
-      <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:300px;border-radius:12px;"></div>
-      <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:300px;border-radius:12px;"></div>
-      <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:300px;border-radius:12px;display:none;"></div>
-    </div>
-  </div>
-  <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:200px;border-radius:12px;"></div>
-</div>
-
-
 <!-- COVER -->
 <div class="perfil-cover" id="perfilCover" style="background:#3B9FD4;"></div>
 
 <!-- PERFIL -->
-<div class="perfil-body" id="perfilBody" style="display:none;">
+<div class="perfil-body" id="perfilBody">
   <div class="perfil-inner">
     <div class="perfil-header">
       <!-- AVATAR -->
@@ -297,7 +277,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--te
 </div>
 
 <!-- PAGE BODY -->
-<div class="page" id="pageBody" style="display:none;">
+<div class="page" id="pageBody">
 
   <!-- MAIN -->
   <div>
@@ -588,15 +568,9 @@ function renderNegocio(n,prods){
     if(bt&&n.slug)bt.onclick=()=>window.location.href=`turnos.html?slug=${n.slug}`;
   }
 
-  // Mostrar perfil cargado, ocultar skeleton
-  const sk1 = document.getElementById('perfilSkeleton');
-  const sk2 = document.getElementById('pageBodySkeleton');
-  const pb  = document.getElementById('perfilBody');
-  const pg  = document.getElementById('pageBody');
-  if(sk1) sk1.style.display='none';
-  if(sk2) sk2.style.display='none';
-  if(pb)  pb.style.display='block';
-  if(pg)  pg.style.display='grid';
+  // Ocultar loading overlay
+  const ov = document.getElementById('loadingOverlay');
+  if(ov) { ov.classList.add('hide'); setTimeout(()=>ov.style.display='none',300); }
 
   renderProds(prods);
 }
@@ -630,6 +604,8 @@ function renderProds(lista){
 }
 
 function mostrarSinNegocio(){
+  const ov = document.getElementById('loadingOverlay');
+  if(ov) { ov.classList.add('hide'); setTimeout(()=>ov.style.display='none',300); }
   document.getElementById("negNombre").textContent="Negocio no encontrado";
   document.getElementById("negAvatarTexto").textContent="?";
   document.title="No encontrado — PuntoChaco";
