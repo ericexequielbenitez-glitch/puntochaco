@@ -40,12 +40,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--te
 .btn-tb:hover{background:var(--g2);}
 
 /* COVER + PERFIL */
-.perfil-cover{height:160px;background:#3B9FD4;position:relative;}
-.perfil-body{background:var(--w);border-bottom:1px solid var(--borde);}
+.perfil-cover{height:200px;background:#3B9FD4;}
+.perfil-body{background:var(--w);border-bottom:1px solid var(--borde);position:relative;}
 .perfil-inner{max-width:1100px;margin:0 auto;padding:0 24px;}
 
-.perfil-header{display:flex;align-items:flex-end;justify-content:space-between;padding:0 0 16px;flex-wrap:wrap;gap:12px;margin-top:-44px;}
-.neg-avatar{width:88px;height:88px;border-radius:50%;border:4px solid var(--w);background:linear-gradient(135deg,#1877f2,#2E8B57);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:28px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.perfil-header{display:flex;align-items:flex-end;justify-content:space-between;padding:0 0 16px;flex-wrap:wrap;gap:12px;margin-top:-48px;}
+.neg-avatar{width:96px;height:96px;border-radius:50%;border:4px solid var(--w);background:linear-gradient(135deg,#1877f2,#2E8B57);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:30px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;box-shadow:0 2px 10px rgba(0,0,0,.2);}
 
 .neg-info{padding:0 0 4px;}
 .neg-nombre-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}
@@ -159,7 +159,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--te
 
 /* RESPONSIVE */
 @media(max-width:900px){.page{grid-template-columns:1fr;}.neg-sidebar{display:none;}}
-@media(max-width:600px){.perfil-cover{height:140px;}#topbar{padding:0 12px;}.breadcrumb{display:none;}}
+@media(max-width:600px){.perfil-cover{height:160px;}#topbar{padding:0 12px;}.breadcrumb{display:none;}}
 </style>
 </head>
 <body>
@@ -209,7 +209,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--te
 
 
 <!-- COVER -->
-<div class="perfil-cover" id="perfilCover" style="background:#3B9FD4;"></div>
+<div class="perfil-cover" id="perfilCover"></div>
 
 <!-- PERFIL -->
 <div class="perfil-body" id="perfilBody">
