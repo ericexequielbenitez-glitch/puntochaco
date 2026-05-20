@@ -33,7 +33,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--te
 .btn-tb:hover{background:var(--g2);}
 
 /* COVER + PERFIL */
-.perfil-cover{height:200px;background:linear-gradient(135deg,#1877f2 0%,#2E8B57 100%);position:relative;}
+.perfil-cover{height:200px;background:#1c1e21;position:relative;}
 .perfil-body{background:var(--w);border-bottom:1px solid var(--borde);}
 .perfil-inner{max-width:1100px;margin:0 auto;padding:0 24px;}
 
@@ -544,12 +544,6 @@ function renderNegocio(n,prods){
     catBadge.className="neg-cat-badge "+(SERVICIOS.has(n.categoria)?"nb-serv":"nb-prod");
     catBadge.style.display="inline-flex";
   }
-
-  // Cover gradient personalizado por categoría
-  const cover=document.getElementById("perfilCover");
-  const colors=["135deg,#1877f2,#2E8B57","135deg,#8e44ad,#1877f2","135deg,#e67e22,#e74c3c","135deg,#16a085,#2E8B57","135deg,#2980b9,#1877f2"];
-  const ci=Math.abs((n.nombre||"A").charCodeAt(0))%colors.length;
-  cover.style.background=`linear-gradient(${colors[ci]})`;
 
   // Avatar
   if(n.logoUrl){
