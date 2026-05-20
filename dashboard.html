@@ -14,7 +14,6 @@
   --texto:#050505; --texto-2:#65676b; --texto-3:#90949c;
   --borde:#dddfe2; --borde-2:#ccd0d5;
   --error:#fa3e3e;
-  --error:#FF3B3B;
   --r-sm:10px; --r-md:16px; --r-lg:24px;
   --sombra:0 4px 20px rgba(42,172,226,0.08);
 }
@@ -42,17 +41,17 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--fondo);color:var(
 .nav-grupo-titulo{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.25);padding:8px 20px 4px;}
 .nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:13px;font-weight:500;color:rgba(255,255,255,0.55);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;}
 .nav-item:hover{color:var(--blanco);background:rgba(255,255,255,0.04);}
-.nav-item.activo{color:var(--blanco);background:rgba(91,173,214,0.15);border-left-color:var(--celeste);}
+.nav-item.activo{color:var(--blanco);background:rgba(24,119,242,0.2);border-left-color:#1877f2;}
 .nav-item svg{width:16px;height:16px;flex-shrink:0;}
 .sidebar-bottom{padding:12px 0;border-top:1px solid rgba(255,255,255,0.08);}
 
 /* MAIN */
 .main-content{flex:1;min-width:0;display:flex;flex-direction:column;}
-.topbar{height:64px;background:var(--blanco);border-bottom:1.5px solid var(--borde);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;}
+.topbar{height:56px;background:#fff;border-bottom:1px solid #dddfe2;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50;box-shadow:0 1px 2px rgba(0,0,0,.1);}
 .topbar-titulo{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;}
 .btn-hamburger{display:none;background:none;border:none;cursor:pointer;padding:4px;}
 .btn-hamburger svg{width:22px;height:22px;stroke:var(--texto);}
-.content-area{flex:1;padding:28px;}
+.content-area{flex:1;padding:20px 24px;}
 .seccion{display:none;}
 
 /* ESTADO BADGE */
@@ -62,7 +61,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--fondo);color:var(
 
 /* CARDS RESUMEN */
 .resumen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;}
-.res-card{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);padding:18px 20px;display:flex;align-items:center;gap:14px;}
+.res-card{background:#fff;border:1px solid #dddfe2;border-radius:8px;padding:16px 20px;display:flex;align-items:center;gap:14px;}
 .res-icono{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .res-icono.cel{background:var(--celeste-suave);}
 .res-icono.ver{background:var(--verde-suave);}
@@ -80,16 +79,16 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--fondo);color:var(
 
 /* PUBLICACIONES GRID */
 .pub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
-.pub-card{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;transition:all 0.25s;}
-.pub-card:hover{box-shadow:var(--sombra);transform:translateY(-2px);}
-.pub-img{height:140px;background:var(--fondo-2);display:flex;align-items:center;justify-content:center;position:relative;background-size:cover;background-position:center;}
+.pub-card{background:#fff;border:1px solid #dddfe2;border-radius:8px;overflow:hidden;transition:box-shadow .15s;}
+.pub-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.12);}
+.pub-img{height:140px;background:#f0f2f5;display:flex;align-items:center;justify-content:center;position:relative;background-size:cover;background-position:center;}
 .pub-estado-badge{position:absolute;top:8px;left:8px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;}
 .ap{background:rgba(58,143,90,0.15);color:var(--verde);}
 .pe{background:rgba(255,152,0,0.15);color:#E65100;}
 .pub-body{padding:14px;}
-.pub-cat{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--celeste);margin-bottom:3px;}
-.pub-titulo{font-size:15px;font-weight:700;margin-bottom:4px;}
-.pub-precio{font-size:16px;font-weight:800;color:var(--verde);margin-bottom:10px;}
+.pub-cat{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#1877f2;margin-bottom:3px;}
+.pub-titulo{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px;color:#050505;}
+.pub-precio{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:#1a7f37;margin-bottom:10px;}
 .pub-acciones{display:flex;gap:6px;}
 .btn-pub-edit{flex:1;height:32px;background:var(--celeste-suave);color:var(--celeste);border:1px solid var(--celeste-claro);border-radius:100px;font-family:'Inter',system-ui,sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;}
 .btn-pub-edit:hover{background:var(--celeste);color:var(--blanco);}
@@ -97,26 +96,26 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--fondo);color:var(
 .btn-pub-del:hover{background:var(--error);color:var(--blanco);}
 
 /* SIN PUBLICACIONES */
-.sin-pubs{display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;background:var(--blanco);border:1.5px dashed var(--borde);border-radius:var(--r-lg);}
-.sin-pubs svg{width:48px;height:48px;stroke:var(--texto-3);margin-bottom:16px;}
-.sin-pubs h3{font-size:17px;font-weight:700;margin-bottom:6px;}
+.sin-pubs{display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;background:#fff;border:2px dashed #dddfe2;border-radius:8px;}
+.sin-pubs svg{width:48px;height:48px;stroke:#ccd0d5;margin-bottom:16px;}
+.sin-pubs h3{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;margin-bottom:6px;color:#050505;}
 .sin-pubs p{font-size:14px;color:var(--texto-2);}
 
 /* BOTONES */
 .btn{display:inline-flex;align-items:center;gap:7px;padding:0 20px;height:40px;border-radius:100px;font-family:'Inter',system-ui,sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;border:none;transition:all 0.2s;}
-.btn-celeste{background:var(--celeste);color:var(--blanco);box-shadow:0 4px 14px rgba(91,173,214,0.3);}
-.btn-celeste:hover{background:#4A9DC6;transform:translateY(-1px);}
+.btn-celeste{background:#1877f2;color:#fff;box-shadow:0 4px 14px rgba(24,119,242,.25);}
+.btn-celeste:hover{background:#166fe5;transform:translateY(-1px);}
 .btn-celeste:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
-.btn-ghost{background:transparent;color:var(--texto-2);border:1.5px solid var(--borde-2);}
+.btn-ghost{background:transparent;color:#65676b;border:1.5px solid #ccd0d5;}
 .btn-ghost:hover{border-color:var(--celeste);color:var(--celeste);}
 .btn-error{background:rgba(255,59,59,0.08);color:var(--error);border:1.5px solid rgba(255,59,59,0.2);}
 
 /* MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,43,74,0.5);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center;padding:20px;}
-.modal-box{background:var(--blanco);border-radius:var(--r-lg);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.15);animation:aparecer 0.3s ease;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:#fff;border-radius:8px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2);animation:aparecer 0.3s ease;}
 @keyframes aparecer{from{transform:scale(0.96);opacity:0}to{transform:scale(1);opacity:1}}
-.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1.5px solid var(--borde);}
-.modal-header h3{font-family:'Sora',sans-serif;font-size:20px;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #dddfe2;}
+.modal-header h3{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:#050505;}
 .btn-cerrar-modal{background:none;border:none;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--texto-3);transition:all 0.2s;}
 .btn-cerrar-modal:hover{background:var(--fondo);color:var(--texto);}
 .btn-cerrar-modal svg{width:18px;height:18px;}
@@ -132,7 +131,7 @@ input[type="text"],input[type="number"],input[type="time"],select,textarea{
   border-radius:var(--r-sm);font-family:'Inter',system-ui,sans-serif;
   font-size:14px;color:var(--texto);outline:none;transition:all 0.2s;-webkit-appearance:none;
 }
-input:focus,select:focus,textarea:focus{border-color:var(--celeste);background:var(--blanco);box-shadow:0 0 0 3px rgba(91,173,214,0.1);}
+input:focus,select:focus,textarea:focus{border-color:#1877f2;background:#fff;box-shadow:0 0 0 3px rgba(24,119,242,.1);}
 textarea{height:80px;padding:10px 12px;resize:vertical;}
 
 /* UPLOAD AREA */
@@ -153,8 +152,8 @@ textarea{height:80px;padding:10px 12px;resize:vertical;}
 /* TOAST */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);padding:11px 22px;border-radius:100px;font-size:14px;font-weight:600;opacity:0;transition:all 0.3s;z-index:500;white-space:nowrap;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.toast.ok{background:var(--texto);color:var(--blanco);}
-.toast.error{background:var(--error);color:var(--blanco);}
+.toast.ok{background:#333;color:#fff;}
+.toast.error{background:#fa3e3e;color:#fff;}
 
 /* SEC TITULO */
 .sec-titulo-wrap{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
@@ -881,7 +880,7 @@ function mostrarToast(msg, tipo="ok") {
 <body>
 
 <div id="cargando">
-  <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco" style="height:80px;width:auto;margin-bottom:16px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.08));">
+  <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco" style="height:96px;width:auto;margin-bottom:20px;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.1));">
   <div class="spinner-grande"></div>
   <p style="font-size:14px;color:var(--texto-3);">Cargando tu panel...</p>
 </div>
@@ -1029,10 +1028,10 @@ function mostrarToast(msg, tipo="ok") {
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:12px;">
       <button class="btn-hamburger" onclick="toggleSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-      <div class="topbar-titulo" id="negNombreTop">Mi negocio</div>
-      <div class="estado-badge pendiente" id="estNegocio">Pendiente</div>
+      <div style="font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:#050505;" id="negNombreTop">Mi negocio</div>
+      <div style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:600;background:#fff3e0;color:#e65100;" id="estNegocio">Pendiente</div>
     </div>
-    <button class="btn btn-celeste" onclick="abrirModalPub()" style="height:38px;padding:0 18px;font-size:13px;">
+    <button onclick="abrirModalPub()" style="height:36px;padding:0 16px;background:#1877f2;color:#fff;border:none;border-radius:6px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;" onmouseover="this.style.background='#166fe5'" onmouseout="this.style.background='#1877f2'">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nueva publicación
     </button>
@@ -1042,30 +1041,38 @@ function mostrarToast(msg, tipo="ok") {
 
     <!-- INICIO -->
     <div class="seccion" id="sec-inicio" style="display:block;">
-      <div class="resumen-grid">
-        <div class="res-card">
-          <div class="res-icono cel"><svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-          <div><div class="res-num" id="contadorPubs">0</div><div class="res-lbl">Publicaciones</div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px;">
+        <div style="background:#fff;border:1px solid #dddfe2;border-radius:8px;padding:16px 20px;display:flex;align-items:center;gap:14px;">
+          <div style="width:42px;height:42px;border-radius:50%;background:#e7f3ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1877f2" stroke-width="2" width="20" height="20"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div><div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:700;color:#050505;line-height:1;" id="contadorPubs">0</div><div style="font-size:12px;color:#65676b;margin-top:2px;">Publicaciones</div></div>
         </div>
-        <div class="res-card">
-          <div class="res-icono ver"><svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
-          <div><div class="res-num" id="statLocalidad" style="font-size:15px;">-</div><div class="res-lbl">Localidad</div></div>
+        <div style="background:#fff;border:1px solid #dddfe2;border-radius:8px;padding:16px 20px;display:flex;align-items:center;gap:14px;">
+          <div style="width:42px;height:42px;border-radius:50%;background:#e6f4ea;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2E8B57" stroke-width="2" width="20" height="20"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div><div style="font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:#050505;line-height:1.2;" id="statLocalidad">-</div><div style="font-size:12px;color:#65676b;margin-top:2px;">Localidad</div></div>
         </div>
-        <div class="res-card">
-          <div class="res-icono cel"><svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg></div>
-          <div><div class="res-num" id="statCategoria" style="font-size:13px;">-</div><div class="res-lbl">Categoría</div></div>
+        <div style="background:#fff;border:1px solid #dddfe2;border-radius:8px;padding:16px 20px;display:flex;align-items:center;gap:14px;">
+          <div style="width:42px;height:42px;border-radius:50%;background:#e7f3ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1877f2" stroke-width="2" width="20" height="20"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+          </div>
+          <div><div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:#050505;line-height:1.3;" id="statCategoria">-</div><div style="font-size:12px;color:#65676b;margin-top:2px;">Categoría</div></div>
         </div>
-        <div class="res-card">
-          <div class="res-icono ver"><svg viewBox="0 0 24 24" fill="none" stroke="var(--verde)" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13"/></svg></div>
-          <div><div class="res-num" id="statWa" style="font-size:12px;">-</div><div class="res-lbl">WhatsApp</div></div>
+        <div style="background:#fff;border:1px solid #dddfe2;border-radius:8px;padding:16px 20px;display:flex;align-items:center;gap:14px;">
+          <div style="width:42px;height:42px;border-radius:50%;background:#e6f4ea;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" width="20" height="20"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 3.07 4.37 2 2 0 0 1 5 2.18h3a2 2 0 0 1 2 1.72"/></svg>
+          </div>
+          <div><div style="font-size:13px;font-weight:700;color:#050505;line-height:1.3;" id="statWa">-</div><div style="font-size:12px;color:#65676b;margin-top:2px;">WhatsApp</div></div>
         </div>
       </div>
-      <div class="limite-wrap">
-        <div class="limite-header"><span class="limite-lbl">Publicaciones este mes</span><span class="limite-num" id="limitePubs">0/15</span></div>
-        <div class="barra-track"><div class="barra-fill" id="barraLimite" style="width:0%"></div></div>
+      <div style="background:#fff;border:1px solid #dddfe2;border-radius:8px;padding:14px 18px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:13px;font-weight:600;color:#050505;">Publicaciones este mes</span><span style="font-size:13px;font-weight:700;color:#1877f2;" id="limitePubs">0/15</span></div>
+        <div style="height:6px;background:#e4e6eb;border-radius:3px;overflow:hidden;"><div style="height:100%;background:#2E8B57;border-radius:3px;transition:width .5s ease;" id="barraLimite" style="width:0%"></div></div>
       </div>
-      <div class="sec-titulo-wrap">
-        <div class="sec-titulo">Tus publicaciones</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div style="font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#050505;">Tus publicaciones</div>
         <button class="btn btn-ghost" onclick="mostrarSeccion('publicaciones')" style="height:34px;padding:0 14px;font-size:13px;">Ver todas</button>
       </div>
       <div class="pub-grid" id="gridPublicacionesHome"></div>
@@ -1078,15 +1085,15 @@ function mostrarToast(msg, tipo="ok") {
 
     <!-- PUBLICACIONES -->
     <div class="seccion" id="sec-publicaciones">
-      <div class="sec-titulo-wrap">
-        <div class="sec-titulo">Mis publicaciones</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div style="font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#050505;">Mis publicaciones</div>
         <button class="btn btn-celeste" onclick="abrirModalPub()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nueva
         </button>
       </div>
-      <div class="limite-wrap">
-        <div class="limite-header"><span class="limite-lbl">Publicaciones este mes</span><span class="limite-num" id="limitePubs2">0/15</span></div>
-        <div class="barra-track"><div class="barra-fill" id="barraLimite2" style="width:0%"></div></div>
+      <div style="background:#fff;border:1px solid #dddfe2;border-radius:8px;padding:14px 18px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:13px;font-weight:600;color:#050505;">Publicaciones este mes</span><span style="font-size:13px;font-weight:700;color:#1877f2;" id="limitePubs2">0/15</span></div>
+        <div style="height:6px;background:#e4e6eb;border-radius:3px;overflow:hidden;"><div style="height:100%;background:#2E8B57;border-radius:3px;transition:width .5s ease;" id="barraLimite2" style="width:0%"></div></div>
       </div>
       <div class="pub-grid" id="gridPublicaciones"></div>
       <div class="sin-pubs" id="sinPublicaciones">
@@ -1098,7 +1105,7 @@ function mostrarToast(msg, tipo="ok") {
 
     <!-- MI NEGOCIO -->
     <div class="seccion" id="sec-negocio">
-      <div class="sec-titulo-wrap"><div class="sec-titulo">Mi negocio</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;"><div style="font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#050505;">Mi negocio</div></div>
       <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;box-shadow:var(--sombra);">
         <div class="perfil-cover"></div>
         <div style="padding:0 20px 20px;">
@@ -1182,7 +1189,7 @@ function mostrarToast(msg, tipo="ok") {
 
     <!-- TURNOS -->
     <div class="seccion" id="sec-turnos">
-      <div class="sec-titulo-wrap"><div class="sec-titulo">Gestión de turnos</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;"><div style="font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#050505;">Gestión de turnos</div></div>
       <!-- Stats turnos -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
         <div class="res-card">
@@ -1246,7 +1253,7 @@ function mostrarToast(msg, tipo="ok") {
 
     <!-- STOCK -->
     <div class="seccion" id="sec-stock">
-      <div class="sec-titulo-wrap"><div class="sec-titulo">Mi stock</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;"><div style="font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#050505;">Mi stock</div></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;">
         <div class="res-card">
           <div class="res-icono cel"><svg viewBox="0 0 24 24" fill="none" stroke="var(--celeste)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
