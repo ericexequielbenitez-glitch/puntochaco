@@ -149,7 +149,11 @@ textarea{height:80px;padding:10px 12px;resize:vertical;}
 .perfil-cover{height:80px;background:linear-gradient(135deg,var(--celeste) 0%,var(--verde) 100%);position:relative;}
 .perfil-avatar{width:80px;height:80px;border-radius:var(--r-md);border:4px solid var(--blanco);position:absolute;bottom:-40px;left:20px;background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:26px;font-weight:700;color:var(--blanco);overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);background-size:cover;background-position:center;}
 
-/* TOAST */
+/* OCULTAR WIDGETS EXTERNOS */
+#launcher,#hubspot-messages-iframe-container,.intercom-launcher,
+[id*="chat"],[class*="chat-widget"],[id*="crisp"],[class*="crisp"],
+iframe[src*="intercom"],iframe[src*="hubspot"],
+div[id^="fc_frame"]{display:none!important;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);padding:11px 22px;border-radius:100px;font-size:14px;font-weight:600;opacity:0;transition:all 0.3s;z-index:500;white-space:nowrap;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast.ok{background:#333;color:#fff;}
@@ -578,6 +582,15 @@ window.guardarDatosNegocio = async function(e) {
   const btn = document.getElementById("btnGuardarNegocio");
   if(btn) { btn.disabled=true; btn.textContent="Guardando..."; }
 
+  // Verificar que tengamos el negocio cargado
+  if (!negocioActual?.id) {
+    if (!await asegurarNegocio()) {
+      mostrarToast("No se encontró tu negocio. Recargá la página.","error");
+      if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg> Guardar cambios';}
+      return;
+    }
+  }
+
   try {
     const g = id => document.getElementById(id)?.value||"";
     const nombre      = g("editNombre").trim();
@@ -882,8 +895,22 @@ window.mostrarSeccion = function(id) {
   const nav = document.querySelector(`[data-sec="${id}"]`);
   if(nav) nav.classList.add("activo");
   if (window.innerWidth<900) document.getElementById("sidebar")?.classList.remove("abierto");
+  // Scroll al inicio del contenido sin afectar toda la página
+  const content = document.querySelector(".content-area");
+  if(content) content.scrollTop = 0;
   if (id==="turnos") cargarConfigTurnos();
   if (id==="stock")  cargarStock();
+  if (id==="negocio") {
+    // Recargar negocio si no está cargado
+    if (!negocioActual?.id) {
+      asegurarNegocio().then(ok => {
+        if (ok) rellenarFormEdicion();
+        else mostrarToast("No se pudo cargar el negocio","error");
+      });
+    } else {
+      rellenarFormEdicion();
+    }
+  }
 };
 
 window.toggleSidebar = () => document.getElementById("sidebar")?.classList.toggle("abierto");
