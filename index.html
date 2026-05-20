@@ -3,536 +3,455 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Punto Chaco — La plataforma de emprendedores más moderna del Chaco.">
-<title>Punto Chaco — Emprendedores Chaqueños</title>
+<title>PuntoChaco — Emprendedores Chaqueños</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
-:root {
-  --blanco:#FFFFFF;
-  --fondo:#F5F8FA;
-  --celeste:#3B9FD4;
-  --celeste-2:#5BADD6;
-  --celeste-claro:#D4EAF7;
-  --celeste-suave:#EBF5FC;
-  --verde:#2E8B57;
-  --verde-suave:#E8F5EE;
-  --texto:#0D1F2D;
-  --texto-2:#3A5568;
-  --texto-3:#7A9BB0;
-  --borde:#E2EDF5;
-  --borde-2:#C8DFF0;
-  --sombra-sm:0 2px 8px rgba(13,31,45,0.06);
-  --sombra-md:0 8px 28px rgba(13,31,45,0.10);
-  --sombra-lg:0 20px 60px rgba(13,31,45,0.14);
-  --r:12px;
-  --r-lg:20px;
+:root{
+  --w:#fff;--g:#f0f2f5;--g2:#e4e6eb;--g3:#ccd0d5;
+  --text-1:#050505;--text-2:#65676b;--text-3:#90949c;
+  --blue:#1877f2;--blue-h:#166fe5;--blue-l:#e7f3ff;
+  --green:#42b883;--green-l:#e6f4ea;
+  --red:#fa3e3e;--red-l:#fff0f0;
+  --borde:#dddfe2;
+  --r:8px;--r2:12px;--r3:20px;
+  --sh:0 1px 2px rgba(0,0,0,.1);
+  --sh2:0 4px 12px rgba(0,0,0,.12);
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;}
-body{font-family:'DM Sans',sans-serif;background:var(--fondo);color:var(--texto);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--text-1);-webkit-font-smoothing:antialiased;}
 
-h1,h2,h3{font-family:'Fraunces',serif;font-optical-sizing:auto;}
-
-/* ══════════════════════════════
-   NAV
-══════════════════════════════ */
-nav{
-  position:fixed;top:0;left:0;right:0;z-index:100;
-  height:60px;
-  background:rgba(255,255,255,0.95);
-  backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--borde);
+/* ══ TOPBAR ══ */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:56px;
+  background:var(--w);border-bottom:1px solid var(--borde);
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 32px;
-  transition:box-shadow 0.3s;
+  padding:0 16px;z-index:200;box-shadow:var(--sh);
 }
-nav.scrolled{box-shadow:var(--sombra-md);}
-.nav-logo{display:flex;align-items:center;text-decoration:none;}
-.nav-logo img{height:36px;width:auto;}
-.nav-links{display:flex;align-items:center;gap:28px;list-style:none;}
-.nav-links a{text-decoration:none;font-size:14px;font-weight:500;color:var(--texto-2);transition:color 0.2s;}
-.nav-links a:hover{color:var(--celeste);}
-.nav-end{display:flex;align-items:center;gap:10px;}
-.btn{display:inline-flex;align-items:center;gap:7px;padding:0 18px;height:38px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;border:none;transition:all 0.2s;white-space:nowrap;}
-.btn-ghost{background:transparent;color:var(--texto-2);border:1.5px solid var(--borde-2);}
-.btn-ghost:hover{border-color:var(--celeste);color:var(--celeste);}
-.btn-primary{background:var(--celeste);color:#fff;box-shadow:0 4px 14px rgba(59,159,212,0.3);}
-.btn-primary:hover{background:#2d8cbf;transform:translateY(-1px);}
-.btn-verde{background:var(--verde);color:#fff;box-shadow:0 4px 14px rgba(46,139,87,0.3);}
-.btn-verde:hover{background:#256b45;transform:translateY(-1px);}
-.ham{display:none;background:none;border:none;cursor:pointer;padding:4px;}
-.ham svg{width:22px;height:22px;stroke:var(--texto);}
+.tb-left{display:flex;align-items:center;gap:8px;}
+.tb-logo{text-decoration:none;display:flex;align-items:center;}
+.tb-logo img{height:34px;}
+.tb-search{
+  display:flex;align-items:center;gap:8px;
+  background:var(--g);border-radius:var(--r3);
+  padding:0 14px;height:40px;min-width:240px;
+  border:1px solid transparent;transition:all .2s;
+}
+.tb-search:focus-within{background:var(--w);border-color:var(--blue);box-shadow:0 0 0 2px rgba(24,119,242,.2);}
+.tb-search svg{width:16px;height:16px;stroke:var(--text-2);flex-shrink:0;}
+.tb-search input{border:none;outline:none;background:transparent;font-family:'Inter',sans-serif;font-size:14px;width:100%;}
+.tb-right{display:flex;align-items:center;gap:8px;}
+.btn-tb{height:36px;padding:0 16px;border-radius:var(--r);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.btn-ghost{background:var(--g);color:var(--text-1);}
+.btn-ghost:hover{background:var(--g2);}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-blue:hover{background:var(--blue-h);}
+.btn-green{background:#25D366;color:#fff;}
+.btn-green:hover{background:#1da851;}
+#navUser{display:flex;align-items:center;gap:8px;}
 
-/* ══════════════════════════════
-   HERO — minimal, editorial
-══════════════════════════════ */
-.hero{
-  min-height:100vh;
-  padding:100px 32px 40px;
-  display:grid;
-  grid-template-columns:1fr 420px;
-  gap:48px;
-  align-items:center;
-  max-width:1200px;
-  margin:0 auto;
-  position:relative;
-}
-.hero-eyebrow{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:5px 14px;
-  background:var(--celeste-suave);border:1px solid var(--celeste-claro);
-  border-radius:100px;font-size:12px;font-weight:600;color:var(--celeste);
-  letter-spacing:0.06em;text-transform:uppercase;margin-bottom:24px;
-}
-.pulse{width:7px;height:7px;background:var(--celeste);border-radius:50%;animation:p 2s ease infinite;}
-@keyframes p{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
-.hero-title{
-  font-size:clamp(44px,5.5vw,72px);
-  font-weight:800;
-  line-height:1.08;
-  letter-spacing:-0.03em;
-  color:var(--texto);
-  margin-bottom:20px;
-}
-.hero-title em{font-style:italic;color:var(--celeste);}
-.hero-title .g{color:var(--verde);}
-.hero-sub{font-size:17px;color:var(--texto-2);line-height:1.7;font-weight:300;max-width:480px;margin-bottom:36px;}
-.hero-ctas{display:flex;gap:10px;flex-wrap:wrap;}
-.hero-ctas .btn{height:48px;padding:0 24px;font-size:14px;}
+/* ══ LAYOUT ══ */
+.page{display:grid;grid-template-columns:280px 1fr 300px;gap:0;max-width:1400px;margin:0 auto;padding-top:56px;}
 
-/* HERO RIGHT — mini app preview */
-.hero-card{
-  background:var(--blanco);
-  border:1.5px solid var(--borde);
-  border-radius:var(--r-lg);
-  overflow:hidden;
-  box-shadow:var(--sombra-lg);
+/* ══ LEFT SIDEBAR ══ */
+.left-col{
+  padding:16px 8px;position:sticky;top:56px;height:calc(100vh - 56px);
+  overflow-y:auto;scrollbar-width:thin;
 }
-.hc-header{
-  padding:14px 18px;
-  border-bottom:1px solid var(--borde);
-  display:flex;align-items:center;gap:10px;
-  background:var(--fondo);
-}
-.hc-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:14px;font-weight:700;color:#fff;}
-.hc-name{font-size:14px;font-weight:700;}
-.hc-cat{font-size:11px;color:var(--texto-3);}
-.hc-img{height:180px;background:linear-gradient(135deg,#1A2B4A,#3B9FD4);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:48px;font-weight:700;color:#fff;}
-.hc-body{padding:16px 18px;}
-.hc-tag{font-size:11px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;}
-.hc-title{font-family:'Fraunces',serif;font-size:18px;font-weight:700;margin-bottom:6px;}
-.hc-desc{font-size:13px;color:var(--texto-3);line-height:1.5;margin-bottom:14px;}
-.hc-price{font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:var(--verde);}
-.hc-actions{display:flex;gap:8px;margin-top:12px;}
-.hc-wa{flex:1;height:36px;background:#25D366;color:#fff;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
-.hc-ver{flex:1;height:36px;background:transparent;color:var(--texto-2);border:1.5px solid var(--borde);border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.left-col::-webkit-scrollbar{width:4px;}
+.left-col::-webkit-scrollbar-track{background:transparent;}
+.left-col::-webkit-scrollbar-thumb{background:var(--g3);border-radius:4px;}
 
-/* STATS */
-.hero-stats{
-  display:flex;gap:0;margin-top:48px;
-  background:var(--blanco);border:1.5px solid var(--borde);
-  border-radius:var(--r);overflow:hidden;box-shadow:var(--sombra-sm);
-  max-width:480px;
+.lc-section{margin-bottom:4px;}
+.lc-title{font-size:11px;font-weight:700;color:var(--text-2);letter-spacing:.08em;text-transform:uppercase;padding:8px 12px 4px;}
+.lc-item{
+  display:flex;align-items:center;gap:10px;padding:8px 12px;
+  border-radius:var(--r);cursor:pointer;transition:background .15s;
+  font-size:14px;font-weight:500;color:var(--text-1);text-decoration:none;
+  border:none;background:transparent;width:100%;text-align:left;
 }
-.stat-i{flex:1;padding:14px 16px;text-align:center;border-right:1px solid var(--borde);}
-.stat-i:last-child{border-right:none;}
-.stat-n{font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:var(--texto);}
-.stat-n span{color:var(--celeste);}
-.stat-l{font-size:11px;color:var(--texto-3);font-weight:500;margin-top:2px;}
+.lc-item:hover{background:var(--g2);}
+.lc-item.active{background:var(--blue-l);color:var(--blue);font-weight:600;}
+.lc-icon{width:36px;height:36px;border-radius:50%;background:var(--g2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.lc-icon.blue{background:var(--blue-l);}
+.lc-icon.green{background:var(--green-l);}
+.lc-icon svg{width:18px;height:18px;}
+.lc-count{margin-left:auto;background:var(--blue);color:#fff;font-size:11px;font-weight:700;padding:1px 7px;border-radius:100px;}
+.lc-divider{height:1px;background:var(--borde);margin:8px 12px;}
 
-/* ══════════════════════════════
-   SEARCH BAR
-══════════════════════════════ */
-.search-section{
-  background:var(--blanco);
-  border-top:1px solid var(--borde);
-  border-bottom:1px solid var(--borde);
-  padding:20px 32px;
-  position:sticky;top:60px;z-index:90;
-  backdrop-filter:blur(16px);
+/* FILTROS CATEGORÍAS */
+.cat-grupo{margin-bottom:2px;}
+.cat-btn{
+  display:flex;align-items:center;gap:8px;padding:6px 12px;
+  border-radius:var(--r);cursor:pointer;transition:background .15s;
+  font-size:13px;font-weight:400;color:var(--text-1);text-decoration:none;
+  border:none;background:transparent;width:100%;text-align:left;
 }
-.search-inner{max-width:900px;margin:0 auto;}
-.search-row{display:flex;gap:10px;align-items:center;}
-.search-box{
-  flex:1;display:flex;align-items:center;
-  background:var(--fondo);border:1.5px solid var(--borde);
-  border-radius:100px;padding:0 6px 0 18px;gap:10px;
-  transition:all 0.2s;
-}
-.search-box:focus-within{border-color:var(--celeste);box-shadow:0 0 0 3px rgba(59,159,212,0.1);}
-.search-box svg{width:16px;height:16px;stroke:var(--texto-3);flex-shrink:0;}
-.search-box input{flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--texto);background:transparent;height:44px;}
-.search-box input::placeholder{color:var(--texto-3);}
-.sep{width:1px;height:22px;background:var(--borde);}
-.search-box select{border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--texto-2);background:transparent;cursor:pointer;-webkit-appearance:none;padding-right:4px;}
-.search-tabs{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;}
-.stab{padding:5px 14px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--borde);background:transparent;color:var(--texto-2);transition:all 0.2s;font-family:'DM Sans',sans-serif;}
-.stab:hover,.stab.activo{background:var(--celeste);color:#fff;border-color:var(--celeste);}
-.stab.verde:hover,.stab.verde.activo{background:var(--verde);border-color:var(--verde);}
+.cat-btn:hover{background:var(--g2);}
+.cat-btn.active{background:var(--blue-l);color:var(--blue);font-weight:600;}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cat-count-small{margin-left:auto;font-size:12px;color:var(--text-3);}
 
-/* ══════════════════════════════
-   FEED PRINCIPAL
-══════════════════════════════ */
-.feed-layout{
-  max-width:1200px;margin:0 auto;
-  display:grid;grid-template-columns:1fr 300px;
-  gap:24px;padding:28px 32px 80px;
-  align-items:start;
+/* ══ MAIN FEED ══ */
+.main-col{
+  border-left:1px solid var(--borde);border-right:1px solid var(--borde);
+  min-height:calc(100vh - 56px);
 }
 
-/* FEED MAIN */
-.feed-header{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:20px;flex-wrap:wrap;gap:10px;
+/* FEED TABS */
+.feed-tabs{
+  background:var(--w);border-bottom:1px solid var(--borde);
+  display:flex;align-items:center;gap:2px;padding:0 16px;
+  position:sticky;top:56px;z-index:100;
 }
-.feed-titulo{font-family:'Fraunces',serif;font-size:22px;font-weight:700;}
-.feed-sort{display:flex;gap:6px;}
-.sort-btn{padding:5px 12px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--borde);background:transparent;color:var(--texto-2);font-family:'DM Sans',sans-serif;transition:all 0.2s;}
-.sort-btn.activo,.sort-btn:hover{background:var(--texto);color:#fff;border-color:var(--texto);}
+.ftab{
+  height:52px;padding:0 16px;border:none;background:transparent;
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:500;
+  color:var(--text-2);cursor:pointer;display:flex;align-items:center;gap:7px;
+  border-bottom:3px solid transparent;transition:all .15s;position:relative;
+}
+.ftab:hover{background:var(--g);border-radius:var(--r) var(--r) 0 0;}
+.ftab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600;}
+.ftab svg{width:16px;height:16px;}
 
-/* CARD PUBLICACIÓN — estilo red social */
-.pub-feed-card{
-  background:var(--blanco);
-  border:1px solid var(--borde);
-  border-radius:var(--r-lg);
-  overflow:hidden;
-  margin-bottom:16px;
-  transition:all 0.25s;
-  cursor:pointer;
+/* SORT BAR */
+.sort-bar{
+  background:var(--w);border-bottom:1px solid var(--borde);
+  padding:10px 16px;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;
 }
-.pub-feed-card:hover{box-shadow:var(--sombra-md);border-color:var(--borde-2);}
+.sort-left{display:flex;align-items:center;gap:8px;}
+.sort-label{font-size:13px;font-weight:600;color:var(--text-1);}
+.sort-count{font-size:12px;color:var(--text-2);}
+.sort-right{display:flex;gap:6px;}
+.sort-pill{
+  padding:4px 12px;border-radius:100px;font-size:12px;font-weight:500;
+  cursor:pointer;border:1px solid var(--borde);background:var(--w);
+  color:var(--text-2);font-family:'Inter',sans-serif;transition:all .15s;
+}
+.sort-pill:hover{border-color:var(--blue);color:var(--blue);}
+.sort-pill.active{background:var(--blue);color:#fff;border-color:var(--blue);}
 
-.pfc-header{
-  display:flex;align-items:center;gap:12px;
-  padding:14px 18px;
+/* ══ CARDS FEED ══ */
+.feed-body{padding:12px 0;}
+
+.pub-card{
+  background:var(--w);
+  border-top:1px solid var(--borde);border-bottom:1px solid var(--borde);
+  margin-bottom:8px;
+  transition:box-shadow .15s;
 }
-.pfc-avatar{
-  width:42px;height:42px;border-radius:50%;
-  background:linear-gradient(135deg,var(--celeste),var(--verde));
+.pub-card:hover{box-shadow:0 0 0 1px var(--g3);}
+
+.pc-head{padding:12px 16px 0;display:flex;align-items:center;gap:10px;}
+.pc-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,#1877f2,#42b72a);
   display:flex;align-items:center;justify-content:center;
-  font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#fff;
+  font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:#fff;
   flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;
+  text-decoration:none;
 }
-.pfc-info{flex:1;min-width:0;}
-.pfc-negocio{font-size:14px;font-weight:700;color:var(--texto);}
-.pfc-negocio-row{display:flex;align-items:center;gap:5px;}
-.pfc-ver-svg{width:14px;height:14px;}
-.pfc-meta{font-size:12px;color:var(--texto-3);}
-.pfc-cat-badge{display:inline-flex;padding:2px 8px;background:var(--celeste-suave);color:var(--celeste);border-radius:100px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
-.pfc-cat-badge.verde-b{background:var(--verde-suave);color:var(--verde);}
-
-.pfc-img{
-  width:100%;height:240px;
-  object-fit:cover;display:block;
-  background:linear-gradient(135deg,#1A2B4A,#3B9FD4);
-  background-size:cover;background-position:center;
-  position:relative;
+.pc-meta{flex:1;min-width:0;}
+.pc-negocio{display:flex;align-items:center;gap:5px;font-size:14px;font-weight:600;color:var(--text-1);text-decoration:none;}
+.pc-negocio:hover{text-decoration:underline;}
+.ver-badge{flex-shrink:0;}
+.ver-badge svg{display:block;}
+.pc-sub{font-size:12px;color:var(--text-2);margin-top:1px;display:flex;align-items:center;gap:4px;}
+.pc-sub svg{width:12px;height:12px;}
+.pc-badge{
+  padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;
+  margin-left:auto;
 }
-.pfc-img-placeholder{width:100%;height:240px;background:var(--fondo);display:flex;align-items:center;justify-content:center;}
-.pfc-img-placeholder svg{width:40px;height:40px;stroke:var(--borde-2);}
+.pb-prod{background:#e7f3ff;color:#1877f2;}
+.pb-serv{background:#e6f4ea;color:#1a7f37;}
 
-/* multi imágenes */
-.pfc-imgs-2{display:grid;grid-template-columns:1fr 1fr;height:240px;}
-.pfc-imgs-3{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;height:240px;}
-.pfc-imgs-3 .pfc-img:first-child{grid-row:1/-1;}
-.img-slot{background:var(--fondo-2);overflow:hidden;}
-.img-slot img{width:100%;height:100%;object-fit:cover;display:block;}
+.pc-body{padding:10px 16px 12px;}
+.pc-title{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;line-height:1.3;margin-bottom:5px;}
+.pc-desc{font-size:13px;color:var(--text-2);line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px;}
+.pc-price{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#1a7f37;}
 
-.pfc-body{padding:16px 18px;}
-.pfc-titulo{font-family:'Fraunces',serif;font-size:18px;font-weight:700;margin-bottom:6px;line-height:1.3;}
-.pfc-desc{font-size:13px;color:var(--texto-2);line-height:1.6;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.pfc-precio{font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:var(--verde);margin-bottom:14px;}
-.pfc-footer{
+/* IMÁGENES */
+.pc-imgs{margin:8px 0;}
+.pc-img-1 img,.pc-img-1 div{width:100%;max-height:400px;object-fit:cover;display:block;}
+.pc-img-2{display:grid;grid-template-columns:1fr 1fr;gap:2px;}
+.pc-img-2 img{width:100%;height:200px;object-fit:cover;display:block;}
+.pc-img-3{display:grid;grid-template-columns:2fr 1fr;gap:2px;}
+.pc-img-3 .main-img{grid-row:span 2;}
+.pc-img-3 img{width:100%;height:150px;object-fit:cover;display:block;}
+.pc-img-placeholder{height:200px;background:var(--g);display:flex;align-items:center;justify-content:center;color:var(--text-3);}
+.pc-img-placeholder svg{width:36px;height:36px;}
+
+/* FOOTER CARD */
+.pc-stats{
+  padding:6px 16px;
   display:flex;align-items:center;justify-content:space-between;
-  padding:10px 18px 14px;
-  border-top:1px solid var(--borde);
+  border-bottom:1px solid var(--borde);
 }
-.pfc-actions{display:flex;gap:8px;}
-.pfc-wa{height:36px;padding:0 16px;background:#25D366;color:#fff;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;text-decoration:none;}
-.pfc-wa:hover{background:#1ebe59;transform:translateY(-1px);}
-.pfc-ver{height:36px;padding:0 16px;background:transparent;color:var(--texto-2);border:1.5px solid var(--borde);border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;display:flex;align-items:center;}
-.pfc-ver:hover{border-color:var(--celeste);color:var(--celeste);}
-.pfc-localidad{font-size:12px;color:var(--texto-3);display:flex;align-items:center;gap:4px;}
-.pfc-localidad svg{width:12px;height:12px;}
+.pc-stat-item{font-size:13px;color:var(--text-2);display:flex;align-items:center;gap:4px;}
+.pc-stat-item svg{width:14px;height:14px;}
 
-/* LOADING SKELETON */
-.skeleton{background:linear-gradient(90deg,var(--fondo) 25%,var(--borde) 50%,var(--fondo) 75%);background-size:400% 100%;animation:sk 1.4s ease infinite;}
-@keyframes sk{0%{background-position:100% 50%}100%{background-position:0% 50%}}
-.skel-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px;}
-.skel-img{height:240px;}.skel-h{height:16px;border-radius:4px;margin:0 18px 8px;}
-.skel-h.w60{width:60%;}.skel-h.w40{width:40%;}.skel-h.w80{width:80%;}
-.skel-header{display:flex;align-items:center;gap:12px;padding:14px 18px;}
-.skel-circle{width:42px;height:42px;border-radius:50%;flex-shrink:0;}
-.skel-body{padding:14px 18px 18px;}
-
-/* SIDEBAR */
-.sidebar-right{display:flex;flex-direction:column;gap:16px;position:sticky;top:130px;}
-.sr-card{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);padding:18px;}
-.sr-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700;margin-bottom:14px;color:var(--texto);}
-
-/* NEGOCIO MINI CARD */
-.negocio-mini{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--borde);cursor:pointer;transition:all 0.2s;text-decoration:none;}
-.negocio-mini:last-child{border-bottom:none;padding-bottom:0;}
-.negocio-mini:hover{opacity:0.75;}
-.nm-avatar{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;background-size:cover;background-position:center;}
-.nm-nombre{font-size:13px;font-weight:600;color:var(--texto);}
-.nm-cat{font-size:11px;color:var(--texto-3);}
-.nm-loc{font-size:11px;color:var(--texto-3);display:flex;align-items:center;gap:3px;margin-top:1px;}
-.nm-loc svg{width:10px;height:10px;}
-
-/* CATEGORÍAS SIDEBAR */
-.cat-pill{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);font-size:13px;font-weight:500;color:var(--texto-2);cursor:pointer;transition:all 0.2s;border:1px solid transparent;text-decoration:none;}
-.cat-pill:hover{background:var(--celeste-suave);color:var(--celeste);border-color:var(--celeste-claro);}
-.cat-pill svg{width:15px;height:15px;flex-shrink:0;}
-.cat-count{margin-left:auto;font-size:11px;background:var(--fondo);padding:2px 7px;border-radius:100px;color:var(--texto-3);}
+.pc-actions{
+  display:flex;align-items:center;padding:4px 8px;gap:2px;
+}
+.pc-action-btn{
+  flex:1;height:36px;border:none;background:transparent;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  color:var(--text-2);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:6px;border-radius:var(--r);transition:background .15s;
+  text-decoration:none;
+}
+.pc-action-btn:hover{background:var(--g);}
+.pc-action-btn.wa{color:#25D366;}
+.pc-action-btn.wa:hover{background:#e6f4ea;}
+.pc-action-btn.ver{color:var(--blue);}
+.pc-action-btn.ver:hover{background:var(--blue-l);}
+.pc-action-btn svg{width:18px;height:18px;}
 
 /* EMPTY */
-.feed-empty{background:var(--blanco);border:2px dashed var(--borde);border-radius:var(--r-lg);padding:60px 20px;text-align:center;}
-.feed-empty svg{width:48px;height:48px;stroke:var(--borde-2);margin-bottom:16px;}
-.feed-empty h3{font-family:'Fraunces',serif;font-size:18px;margin-bottom:6px;}
-.feed-empty p{font-size:14px;color:var(--texto-2);}
+.feed-empty{padding:48px 20px;text-align:center;}
+.feed-empty svg{width:48px;height:48px;stroke:var(--g3);margin-bottom:12px;}
+.feed-empty h3{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;margin-bottom:6px;}
+.feed-empty p{font-size:14px;color:var(--text-2);}
 
-/* PUNTOSTOCK */
-.ps-banner{
-  background:linear-gradient(135deg,var(--fondo) 0%,var(--celeste-suave) 100%);
-  border:1.5px solid var(--celeste-claro);
-  border-radius:var(--r-lg);padding:18px;
-}
-.ps-tag{font-size:10px;font-weight:700;color:var(--celeste);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
-.ps-title{font-family:'Fraunces',serif;font-size:16px;font-weight:700;margin-bottom:5px;}
-.ps-desc{font-size:12px;color:var(--texto-2);line-height:1.5;margin-bottom:12px;}
-
-/* MOBILE MENU */
-.menu-mobile{display:none;position:fixed;top:60px;left:0;right:0;background:var(--blanco);border-bottom:1px solid var(--borde);padding:16px 20px;z-index:99;flex-direction:column;gap:8px;}
-.menu-mobile.open{display:flex;}
-.menu-mobile a{text-decoration:none;color:var(--texto-2);font-size:15px;font-weight:500;padding:8px 0;border-bottom:1px solid var(--borde);}
+/* SKELETON */
+.skel{background:linear-gradient(90deg,var(--g) 25%,var(--g2) 50%,var(--g) 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;border-radius:4px;}
+@keyframes sk{0%{background-position:100% 50%}100%{background-position:0% 50%}}
+.skel-card{background:var(--w);border-top:1px solid var(--borde);border-bottom:1px solid var(--borde);padding:16px;margin-bottom:8px;}
 
 /* LOAD MORE */
-.load-more-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:48px;background:var(--blanco);border:1.5px solid var(--borde);border-radius:100px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--texto-2);cursor:pointer;transition:all 0.2s;margin-top:8px;}
-.load-more-btn:hover{border-color:var(--celeste);color:var(--celeste);}
-.load-more-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.load-more{
+  margin:8px 16px 16px;height:40px;width:calc(100% - 32px);
+  background:var(--w);border:1px solid var(--borde);border-radius:var(--r);
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--blue);
+  cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.load-more:hover{background:var(--blue-l);}
+.load-more:disabled{opacity:.5;cursor:not-allowed;}
+
+/* ══ RIGHT SIDEBAR ══ */
+.right-col{padding:16px 8px;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;}
+.rc-card{background:var(--w);border-radius:var(--r2);border:1px solid var(--borde);margin-bottom:12px;overflow:hidden;}
+.rc-header{padding:14px 16px 10px;font-size:15px;font-weight:700;color:var(--text-1);border-bottom:1px solid var(--borde);}
+.rc-body{padding:10px 12px;}
+
+/* NEGOCIO MINI */
+.neg-mini{display:flex;align-items:center;gap:10px;padding:7px 4px;border-radius:var(--r);cursor:pointer;transition:background .15s;text-decoration:none;}
+.neg-mini:hover{background:var(--g);}
+.nm-av{width:40px;height:40px;border-radius:var(--r);background:linear-gradient(135deg,#1877f2,#42b72a);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+.nm-info{flex:1;min-width:0;}
+.nm-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;}
+.nm-sub{font-size:12px;color:var(--text-2);}
+.nm-badge{flex-shrink:0;}
+
+/* PUNTOSTOCK BANNER */
+.ps-card{background:linear-gradient(135deg,#1877f2,#0d47a1);border-radius:var(--r2);padding:16px;margin-bottom:12px;color:#fff;}
+.ps-card .tag{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:8px;}
+.ps-card h3{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px;}
+.ps-card p{font-size:12px;opacity:.8;line-height:1.5;margin-bottom:12px;}
+.ps-card a{display:flex;align-items:center;justify-content:center;height:34px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:var(--r);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#fff;text-decoration:none;transition:background .15s;}
+.ps-card a:hover{background:rgba(255,255,255,.25);}
+
+/* FOOTER SIDEBAR */
+.rc-footer{padding:10px 12px;font-size:11px;color:var(--text-3);line-height:1.8;}
+.rc-footer a{color:var(--text-3);text-decoration:none;}
+.rc-footer a:hover{text-decoration:underline;}
 
 /* RESPONSIVE */
-@media(max-width:1000px){
-  .feed-layout{grid-template-columns:1fr;}
-  .sidebar-right{display:none;}
-  .hero{grid-template-columns:1fr;padding-top:80px;}
-  .hero-card{display:none;}
+@media(max-width:1200px){.right-col{display:none;}}
+@media(max-width:850px){
+  .left-col{display:none;}
+  .page{grid-template-columns:1fr;}
 }
-@media(max-width:700px){
-  nav{padding:0 16px;}
-  .nav-links,.nav-end .btn-ghost{display:none;}
-  .ham{display:flex;}
-  .hero{padding:80px 16px 32px;}
-  .search-section{padding:14px 16px;}
-  .feed-layout{padding:20px 16px 60px;}
-  .sep,.search-box select{display:none;}
+@media(max-width:600px){
+  .tb-search{display:none;}
+  #topbar{padding:0 12px;}
 }
 
-/* ANIMACIÓN ENTRADA */
-.fade-up{opacity:0;transform:translateY(16px);transition:opacity 0.5s ease,transform 0.5s ease;}
-.fade-up.in{opacity:1;transform:translateY(0);}
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);padding:10px 20px;background:#333;color:#fff;border-radius:100px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body>
+<div class="toast" id="toast"></div>
 
-<!-- NAV -->
-<nav id="navbar">
-  <a href="/" class="nav-logo">
-    <img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco">
-  </a>
-  <ul class="nav-links">
-    <li><a href="#feed">Publicaciones</a></li>
-    <li><a href="explorar.html?tipo=servicio">Servicios</a></li>
-    <li><a href="explorar.html">Negocios</a></li>
-    <li><a href="#categorias">Categorías</a></li>
-  </ul>
-  <div class="nav-end" id="navEnd">
-    <a href="login.html" class="btn btn-ghost">Iniciar sesión</a>
-    <a href="registro.html" class="btn btn-primary">Publicar negocio</a>
-    <button class="ham" onclick="toggleMenu()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="tb-left">
+    <a href="/" class="tb-logo"><img src="https://res.cloudinary.com/dhrhg6ng6/image/upload/v1779147755/Punto_rzxqg3.png" alt="PuntoChaco"></a>
+    <div class="tb-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="inputBusqueda" placeholder="Buscá en PuntoChaco..." oninput="filtrar()">
+    </div>
   </div>
-</nav>
-
-<div class="menu-mobile" id="mobileMenu">
-  <a href="#feed">Publicaciones</a>
-  <a href="explorar.html?tipo=servicio">Servicios</a>
-  <a href="explorar.html">Negocios</a>
-  <a href="login.html">Iniciar sesión</a>
-  <a href="registro.html" class="btn btn-primary" style="text-align:center;margin-top:4px;">Publicar negocio</a>
+  <div class="tb-right" id="navUser">
+    <a href="login.html" class="btn-tb btn-ghost">Iniciar sesión</a>
+    <a href="registro.html" class="btn-tb btn-blue">Publicar negocio</a>
+  </div>
 </div>
 
-<!-- HERO -->
-<section class="hero">
-  <div>
-    <div class="hero-eyebrow"><div class="pulse"></div>Plataforma 100% gratuita</div>
-    <h1 class="hero-title">
-      Conectamos<br>
-      <em>emprendedores</em><br>
-      y clientes en el<br>
-      <span class="g">Chaco</span>
-    </h1>
-    <p class="hero-sub">Descubrí productos, servicios y negocios locales. Publicá gratis y llegá a miles de clientes en toda la provincia.</p>
-    <div class="hero-ctas">
-      <a href="#feed" class="btn btn-primary" style="height:48px;padding:0 26px;font-size:14px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Explorar publicaciones
-      </a>
-      <a href="registro.html" class="btn btn-verde" style="height:48px;padding:0 26px;font-size:14px;">
-        Crear mi tienda
-      </a>
-    </div>
-    <div class="hero-stats">
-      <div class="stat-i"><div class="stat-n">100<span>%</span></div><div class="stat-l">Gratuito</div></div>
-      <div class="stat-i"><div class="stat-n">15<span>+</span></div><div class="stat-l">Categorías</div></div>
-      <div class="stat-i"><div class="stat-n">60<span>+</span></div><div class="stat-l">Localidades</div></div>
-    </div>
-  </div>
+<!-- PAGE LAYOUT -->
+<div class="page">
 
-  <!-- Hero preview card -->
-  <div class="hero-card">
-    <div class="hc-header">
-      <div class="hc-avatar">VP</div>
-      <div><div class="hc-name">Vero Pastelería</div><div class="hc-cat">Postres · Resistencia</div></div>
-    </div>
-    <div class="hc-img">🎂</div>
-    <div class="hc-body">
-      <div class="hc-tag">Postres</div>
-      <div class="hc-title">Torta Personalizada</div>
-      <div class="hc-desc">Diseño a pedido para cumpleaños, bautismos y eventos especiales.</div>
-      <div class="hc-price">$8.000</div>
-      <div class="hc-actions">
-        <button class="hc-wa">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-          WhatsApp
-        </button>
-        <button class="hc-ver">Ver negocio</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SEARCH -->
-<div class="search-section" id="searchSection">
-  <div class="search-inner">
-    <div class="search-row">
-      <div class="search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" id="inputBusqueda" placeholder="Buscá productos, servicios o negocios..." oninput="filtrarFeed()">
-        <div class="sep"></div>
-        <select id="selectLocalidad" onchange="filtrarFeed()">
-          <option value="">Todas las localidades</option>
-          <option>Resistencia</option><option>Barranqueras</option><option>Fontana</option>
-          <option>Puerto Vilelas</option><option>Sáenz Peña</option><option>Villa Ángela</option>
-          <option>Charata</option><option>General San Martín</option><option>Castelli</option>
-        </select>
-        <a class="btn btn-primary" style="flex-shrink:0;border-radius:100px;height:36px;padding:0 18px;font-size:13px;" onclick="filtrarFeed()">Buscar</a>
-      </div>
-    </div>
-    <div class="search-tabs" id="searchTabs">
-      <button class="stab activo" onclick="setTipo('',this)">Todo</button>
-      <button class="stab" onclick="setTipo('producto',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+  <!-- LEFT SIDEBAR -->
+  <aside class="left-col">
+    <div class="lc-section">
+      <div class="lc-title">Explorar</div>
+      <button class="lc-item active" id="btnTodo" onclick="setFiltro('todo',this)">
+        <div class="lc-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+        Todo el feed
+      </button>
+      <button class="lc-item" id="btnProductos" onclick="setFiltro('producto',this)">
+        <div class="lc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div>
         Productos
       </button>
-      <button class="stab verde" onclick="setTipo('servicio',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      <button class="lc-item" id="btnServicios" onclick="setFiltro('servicio',this)">
+        <div class="lc-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
         Servicios
       </button>
-      <button class="stab" onclick="setTipo('destacado',this)">⭐ Destacados</button>
-    </div>
-  </div>
-</div>
-
-<!-- FEED PRINCIPAL -->
-<div class="feed-layout" id="feed">
-  <div>
-    <div class="feed-header">
-      <div class="feed-titulo" id="feedTitulo">Últimas publicaciones</div>
-      <div class="feed-sort">
-        <button class="sort-btn activo" onclick="setSort('reciente',this)">Recientes</button>
-        <button class="sort-btn" onclick="setSort('precio-asc',this)">Menor precio</button>
-        <button class="sort-btn" onclick="setSort('precio-desc',this)">Mayor precio</button>
-      </div>
+      <button class="lc-item" onclick="setFiltro('destacado',this)">
+        <div class="lc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        Destacados
+      </button>
     </div>
 
-    <!-- SKELETONS -->
-    <div id="skeletons">
-      <div class="skel-card">
-        <div class="skel-header"><div class="skel-circle skeleton"></div><div style="flex:1;"><div class="skeleton skel-h w60" style="height:12px;"></div><div class="skeleton skel-h w40" style="height:10px;margin-top:5px;"></div></div></div>
-        <div class="skeleton skel-img"></div>
-        <div class="skel-body"><div class="skeleton skel-h w80"></div><div class="skeleton skel-h w60"></div><div class="skeleton skel-h w40"></div></div>
-      </div>
-      <div class="skel-card">
-        <div class="skel-header"><div class="skel-circle skeleton"></div><div style="flex:1;"><div class="skeleton skel-h w60" style="height:12px;"></div><div class="skeleton skel-h w40" style="height:10px;margin-top:5px;"></div></div></div>
-        <div class="skeleton skel-img"></div>
-        <div class="skel-body"><div class="skeleton skel-h w80"></div><div class="skeleton skel-h w60"></div><div class="skeleton skel-h w40"></div></div>
-      </div>
+    <div class="lc-divider"></div>
+
+    <div class="lc-section">
+      <div class="lc-title">Localidad</div>
+      <select id="selectLocalidad" onchange="filtrar()" style="width:100%;height:36px;padding:0 12px;border:1px solid var(--borde);border-radius:var(--r);font-family:'Inter',sans-serif;font-size:13px;color:var(--text-1);background:var(--w);cursor:pointer;outline:none;-webkit-appearance:none;margin:0 0 4px 0;">
+        <option value="">Todas las localidades</option>
+        <option>Resistencia</option><option>Barranqueras</option><option>Fontana</option>
+        <option>Puerto Vilelas</option><option>Sáenz Peña</option><option>Villa Ángela</option>
+        <option>Charata</option><option>General San Martín</option><option>Castelli</option>
+        <option>Quitilipi</option><option>Las Breñas</option>
+      </select>
     </div>
 
-    <div id="feedGrid"></div>
-    <div id="feedEmpty" class="feed-empty" style="display:none;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <h3>Sin resultados</h3>
-      <p>Probá con otro término o categoría.</p>
-    </div>
-    <button id="btnLoadMore" class="load-more-btn" onclick="cargarMas()" style="display:none;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg>
-      Ver más publicaciones
-    </button>
-  </div>
+    <div class="lc-divider"></div>
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar-right">
-    <!-- Negocios destacados -->
-    <div class="sr-card">
-      <div class="sr-title">Negocios destacados</div>
-      <div id="negociosSidebar"><div style="text-align:center;padding:20px;color:var(--texto-3);font-size:13px;">Cargando...</div></div>
-      <a href="explorar.html" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:12px;height:36px;font-size:13px;">Ver todos</a>
+    <div class="lc-section">
+      <div class="lc-title">Categorías</div>
+      <div id="catsList"></div>
     </div>
 
-    <!-- Categorías -->
-    <div class="sr-card" id="categorias">
-      <div class="sr-title">Categorías</div>
-      <div id="catsSidebar"></div>
-    </div>
+    <div class="lc-divider"></div>
 
-    <!-- PuntoStock banner -->
-    <div class="ps-banner">
-      <div class="ps-tag">Herramienta de gestión</div>
-      <div class="ps-title">¿Conocés PuntoStock?</div>
-      <p class="ps-desc">Administrá tu negocio de forma simple y a bajo costo.</p>
-      <a href="https://www.puntostock.com.ar" target="_blank" class="btn btn-primary" style="width:100%;justify-content:center;height:38px;font-size:13px;">Más información →</a>
+    <div class="lc-section">
+      <a href="registro.html" class="lc-item" style="color:var(--blue);font-weight:600;">
+        <div class="lc-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+        Publicar mi negocio
+      </a>
+      <a href="explorar.html" class="lc-item">
+        <div class="lc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+        Ver todos los negocios
+      </a>
     </div>
   </aside>
-</div>
 
-<!-- FOOTER SIMPLE -->
-<footer style="background:var(--texto);padding:40px 32px 24px;">
-  <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:24px;margin-bottom:20px;">
-    <div>
-      <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:#fff;">Punto<span style="color:var(--celeste);">Chaco</span></div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;margin-top:2px;">Emprendedores Chaqueños</div>
+  <!-- MAIN FEED -->
+  <main class="main-col" id="feedSection">
+
+    <div class="feed-tabs">
+      <button class="ftab active" id="tab-todo" onclick="setTab('todo',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Todo
+      </button>
+      <button class="ftab" id="tab-producto" onclick="setTab('producto',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+        Productos
+      </button>
+      <button class="ftab" id="tab-servicio" onclick="setTab('servicio',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Servicios
+      </button>
+      <button class="ftab" id="tab-destacado" onclick="setTab('destacado',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Destacados
+      </button>
     </div>
-    <div style="display:flex;gap:20px;flex-wrap:wrap;">
-      <a href="explorar.html" style="text-decoration:none;font-size:13px;color:rgba(255,255,255,0.5);">Explorar</a>
-      <a href="registro.html" style="text-decoration:none;font-size:13px;color:rgba(255,255,255,0.5);">Publicar negocio</a>
-      <a href="login.html" style="text-decoration:none;font-size:13px;color:rgba(255,255,255,0.5);">Iniciar sesión</a>
-      <a href="https://www.puntostock.com.ar" target="_blank" style="text-decoration:none;font-size:13px;color:rgba(255,255,255,0.5);">PuntoStock</a>
+
+    <div class="sort-bar">
+      <div class="sort-left">
+        <span class="sort-label" id="feedLabel">Últimas publicaciones</span>
+        <span class="sort-count" id="feedCount"></span>
+      </div>
+      <div class="sort-right">
+        <button class="sort-pill active" onclick="setSort('reciente',this)">Recientes</button>
+        <button class="sort-pill" onclick="setSort('precio-asc',this)">Menor precio</button>
+        <button class="sort-pill" onclick="setSort('precio-desc',this)">Mayor precio</button>
+      </div>
     </div>
-  </div>
-  <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-    <p style="font-size:12px;color:rgba(255,255,255,0.3);">© 2025 PuntoChaco. Provincia del Chaco, Argentina.</p>
-    <p style="font-size:12px;color:rgba(255,255,255,0.3);">Plataforma 100% gratuita para emprendedores</p>
-  </div>
-</footer>
+
+    <div class="feed-body">
+      <!-- SKELETONS -->
+      <div id="skeletons">
+        <div class="skel-card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <div class="skel" style="width:40px;height:40px;border-radius:50%;"></div>
+            <div style="flex:1;"><div class="skel" style="height:12px;width:50%;margin-bottom:6px;"></div><div class="skel" style="height:10px;width:35%;"></div></div>
+          </div>
+          <div class="skel" style="height:200px;margin-bottom:10px;"></div>
+          <div class="skel" style="height:14px;width:70%;margin-bottom:6px;"></div>
+          <div class="skel" style="height:12px;width:50%;"></div>
+        </div>
+        <div class="skel-card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <div class="skel" style="width:40px;height:40px;border-radius:50%;"></div>
+            <div style="flex:1;"><div class="skel" style="height:12px;width:55%;margin-bottom:6px;"></div><div class="skel" style="height:10px;width:40%;"></div></div>
+          </div>
+          <div class="skel" style="height:200px;margin-bottom:10px;"></div>
+          <div class="skel" style="height:14px;width:65%;margin-bottom:6px;"></div>
+          <div class="skel" style="height:12px;width:45%;"></div>
+        </div>
+      </div>
+
+      <div id="feedGrid"></div>
+      <div id="feedEmpty" class="feed-empty" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <h3>Sin resultados</h3>
+        <p>Probá con otro término o categoría.</p>
+      </div>
+      <button id="btnLoadMore" class="load-more" onclick="cargarMas()" style="display:none;">
+        Ver más publicaciones
+      </button>
+    </div>
+  </main>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="right-col">
+    <div class="rc-card">
+      <div class="rc-header">Negocios activos</div>
+      <div class="rc-body" id="negSidebar"><div style="font-size:13px;color:var(--text-2);padding:8px 0;">Cargando...</div></div>
+      <div style="padding:0 12px 12px;">
+        <a href="explorar.html" class="btn-tb btn-ghost" style="width:100%;justify-content:center;font-size:13px;">Ver todos →</a>
+      </div>
+    </div>
+
+    <div class="ps-card">
+      <div class="tag">Herramienta de gestión</div>
+      <h3>¿Conocés PuntoStock?</h3>
+      <p>Administrá tu stock, ventas y clientes de forma simple y a bajo costo.</p>
+      <a href="https://www.puntostock.com.ar" target="_blank">Más información →</a>
+    </div>
+
+    <div class="rc-card">
+      <div class="rc-footer">
+        <a href="registro.html">Publicar negocio</a> · <a href="login.html">Iniciar sesión</a> · <a href="explorar.html">Explorar</a><br>
+        <a href="https://www.puntostock.com.ar" target="_blank">PuntoStock</a><br><br>
+        <span>© 2025 PuntoChaco · Provincia del Chaco, Argentina</span>
+      </div>
+    </div>
+  </aside>
+
+</div>
 
 <script type="module">
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, getDocs, getDoc, doc, query, where, orderBy, limit, startAfter }
+import { getFirestore, collection, getDocs, getDoc, doc, query, where }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const app = initializeApp({
@@ -543,286 +462,284 @@ const app = initializeApp({
   messagingSenderId:"871612466602",
   appId:"1:871612466602:web:fe62a4f01c38d5b2c417d3"
 });
-const auth = getAuth(app);
 const db   = getFirestore(app);
+const auth = getAuth(app);
 
-const SERVICIOS_CATS = ['Barbería','Manicuría','Cosmetología','Tratamientos de piel',
+const SERVICIOS = new Set(['Barbería','Manicuría','Cosmetología','Tratamientos de piel',
   'Educación','Animales','Deportes','Entrenamiento personal','Reparaciones',
-  'Fotografía','Diseño','Marketing','Tecnología','Otros servicios'];
+  'Fotografía','Diseño','Marketing','Tecnología','Otros servicios']);
 
-const COLORES = [
-  "linear-gradient(135deg,#1A2B4A,#3B9FD4)",
-  "linear-gradient(135deg,#2E8B57,#3B9FD4)",
-  "linear-gradient(135deg,#3B9FD4,#5BADD6)",
-  "linear-gradient(135deg,#1A2B4A,#2E8B57)",
-  "linear-gradient(135deg,#0D4B3E,#2E8B57)",
-];
+const COLORES_NEG = ['#1877f2','#2E8B57','#e67e22','#8e44ad','#c0392b','#16a085'];
 
-const WA_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>`;
+const WA_ICON = `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>`;
 
-const VER_BADGE = `<svg class="pfc-ver-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#3B9FD4"/><polyline points="7 12 10.5 15.5 17 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const VER_SVG = `<svg viewBox="0 0 24 24" fill="none" width="14" height="14"><circle cx="12" cy="12" r="11" fill="#1877f2"/><polyline points="7 12 10.5 15.5 17 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 // Estado
-let todasPubs = [], negociosMap = {}, filtroTipo = "", filtroSort = "reciente";
-let pubsMostradas = 0, POR_PAGINA = 8;
+let todasPubs = [], negociosMap = {};
+let filtroTipo = "todo", filtroSort = "reciente", filtroCategoria = "";
+let pubsMostradas = 0;
+const POR_PAGINA  = 10;
 
 // ── AUTH NAVBAR ──
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, async user => {
   if (!user) return;
   try {
-    const snap = await getDoc(doc(db,"usuarios",user.uid));
-    if (!snap.exists()) return;
-    const d = snap.data();
+    const d = (await getDoc(doc(db,"usuarios",user.uid))).data();
+    if (!d) return;
     const destino = d.rol==="admin"?"admin.html":d.rol==="vendedor"?"dashboard.html":"#";
-    const navEnd = document.getElementById("navEnd");
-    if (navEnd) {
-      navEnd.innerHTML = `
-        ${d.rol!=="comprador"?`<a href="${destino}" class="btn btn-ghost" style="gap:6px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Mi panel
-        </a>`:""}
-        <span style="font-size:13px;font-weight:600;color:var(--texto-2);">Hola, ${d.nombre}</span>
-        <button class="ham" onclick="toggleMenu()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-      `;
-    }
-  } catch(e) {}
+    document.getElementById("navUser").innerHTML = `
+      ${d.rol!=="comprador"?`<a href="${destino}" class="btn-tb btn-ghost" style="gap:5px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Mi panel</a>`:""}
+      <span style="font-size:13px;font-weight:600;color:var(--text-2);">Hola, ${d.nombre}</span>`;
+  } catch(e){}
 });
 
-// ── CARGAR TODO ──
-async function cargarTodo() {
+// ── CARGA INICIAL ──
+async function init() {
   try {
-    // Cargar negocios
-    const negSnap = await getDocs(query(collection(db,"negocios"), where("aprobado","==",true)));
-    negSnap.docs.forEach(d => { negociosMap[d.id] = { id:d.id, ...d.data() }; });
-
-    // Cargar publicaciones aprobadas
-    const pubSnap = await getDocs(collection(db,"publicaciones"));
+    const [negSnap, pubSnap] = await Promise.all([
+      getDocs(query(collection(db,"negocios"), where("aprobado","==",true))),
+      getDocs(collection(db,"publicaciones"))
+    ]);
+    negSnap.docs.forEach(d => { negociosMap[d.id] = {id:d.id,...d.data()}; });
     todasPubs = pubSnap.docs
-      .map(d => ({ id:d.id, ...d.data() }))
+      .map(d => ({id:d.id,...d.data()}))
       .filter(p => p.aprobado !== false);
-
-    // Negocios sidebar
-    renderNegociosSidebar();
-    renderCategoriasSidebar();
   } catch(e) { console.error(e); }
 
   document.getElementById("skeletons").style.display = "none";
+  renderCats();
+  renderNegSidebar();
   renderFeed();
 }
 
 // ── RENDER FEED ──
 function renderFeed() {
-  const busqueda = (document.getElementById("inputBusqueda")?.value||"").toLowerCase();
-  const localidad = document.getElementById("selectLocalidad")?.value||"";
+  const busq = (document.getElementById("inputBusqueda")?.value||"").toLowerCase().trim();
+  const loc  = document.getElementById("selectLocalidad")?.value||"";
 
   let lista = todasPubs.filter(p => {
-    const esServ = SERVICIOS_CATS.includes(p.categoria);
+    const esServ = SERVICIOS.has(p.categoria||"");
+    // Filtro tipo
     if (filtroTipo==="producto" && esServ) return false;
     if (filtroTipo==="servicio" && !esServ) return false;
-    if (filtroTipo==="destacado") {
-      const neg = negociosMap[p.negocioId];
-      if (!neg?.destacado) return false;
+    if (filtroTipo==="destacado" && !negociosMap[p.negocioId]?.destacado) return false;
+    // Filtro categoría exacta
+    if (filtroCategoria && (p.categoria||"") !== filtroCategoria) return false;
+    // Búsqueda
+    if (busq) {
+      const hayMatch =
+        (p.titulo||"").toLowerCase().includes(busq) ||
+        (p.categoria||"").toLowerCase().includes(busq) ||
+        (p.nombreNegocio||"").toLowerCase().includes(busq) ||
+        (p.descripcion||"").toLowerCase().includes(busq) ||
+        (p.localidad||"").toLowerCase().includes(busq);
+      if (!hayMatch) return false;
     }
-    if (busqueda && !(p.titulo||"").toLowerCase().includes(busqueda) &&
-        !(p.categoria||"").toLowerCase().includes(busqueda) &&
-        !(p.nombreNegocio||"").toLowerCase().includes(busqueda)) return false;
-    if (localidad && (p.localidad||"")!==localidad) return false;
+    // Localidad
+    if (loc && (p.localidad||"")!==loc) return false;
     return true;
   });
 
-  // Ordenar
-  if (filtroSort==="reciente") {
-    lista.sort((a,b) => {
-      const fa = a.creadoEn?.seconds||0;
-      const fb = b.creadoEn?.seconds||0;
-      return fb - fa;
-    });
-  } else if (filtroSort==="precio-asc") {
-    lista.sort((a,b) => (a.precio||0)-(b.precio||0));
-  } else if (filtroSort==="precio-desc") {
-    lista.sort((a,b) => (b.precio||0)-(a.precio||0));
-  }
+  // Sort
+  if (filtroSort==="reciente") lista.sort((a,b)=>(b.creadoEn?.seconds||0)-(a.creadoEn?.seconds||0));
+  else if (filtroSort==="precio-asc") lista.sort((a,b)=>(a.precio||0)-(b.precio||0));
+  else if (filtroSort==="precio-desc") lista.sort((a,b)=>(b.precio||0)-(a.precio||0));
 
-  // Actualizar título
-  const tit = document.getElementById("feedTitulo");
-  if (tit) {
-    if (filtroTipo==="producto") tit.textContent="Productos";
-    else if (filtroTipo==="servicio") tit.textContent="Servicios";
-    else if (filtroTipo==="destacado") tit.textContent="Negocios destacados";
-    else tit.textContent=`Últimas publicaciones (${lista.length})`;
-  }
+  // Label
+  const labels = {todo:"Últimas publicaciones",producto:"Productos",servicio:"Servicios",destacado:"Destacados"};
+  const feedLabel = document.getElementById("feedLabel");
+  const feedCount = document.getElementById("feedCount");
+  if(feedLabel) feedLabel.textContent = filtroCategoria || labels[filtroTipo] || "Resultados";
+  if(feedCount)  feedCount.textContent = lista.length ? `${lista.length} publicaciones` : "";
 
-  const grid  = document.getElementById("feedGrid");
-  const empty = document.getElementById("feedEmpty");
+  const grid    = document.getElementById("feedGrid");
+  const empty   = document.getElementById("feedEmpty");
   const btnMore = document.getElementById("btnLoadMore");
 
   if (!lista.length) {
-    grid.innerHTML = ""; empty.style.display="flex"; btnMore.style.display="none"; return;
+    grid.innerHTML=""; empty.style.display="flex"; btnMore.style.display="none"; return;
   }
-  empty.style.display = "none";
-
-  pubsMostradas = Math.min(lista.length, POR_PAGINA);
-  window._listaFeed = lista;
-  grid.innerHTML = lista.slice(0, pubsMostradas).map((p,i) => renderCard(p,i)).join("");
-
+  empty.style.display="none";
+  window._feedLista = lista;
+  pubsMostradas = Math.min(POR_PAGINA, lista.length);
+  grid.innerHTML = lista.slice(0, pubsMostradas).map(renderCard).join("");
   btnMore.style.display = lista.length > pubsMostradas ? "flex" : "none";
-
-  // Animaciones
-  setTimeout(() => {
-    grid.querySelectorAll(".pub-feed-card").forEach((c,i) => {
-      setTimeout(() => c.classList.add("in"), i*60);
-    });
-  }, 50);
 }
 
 window.cargarMas = function() {
-  const lista = window._listaFeed || [];
+  const lista = window._feedLista||[];
   const desde = pubsMostradas;
-  const hasta  = Math.min(lista.length, pubsMostradas + POR_PAGINA);
+  const hasta  = Math.min(lista.length, pubsMostradas+POR_PAGINA);
   const grid   = document.getElementById("feedGrid");
   const btnMore = document.getElementById("btnLoadMore");
-
-  const nuevas = lista.slice(desde, hasta);
   const div = document.createElement("div");
-  div.innerHTML = nuevas.map((p,i) => renderCard(p, desde+i)).join("");
-
-  Array.from(div.children).forEach(c => {
-    grid.appendChild(c);
-    setTimeout(() => c.classList.add("in"), 50);
-  });
-
+  div.innerHTML = lista.slice(desde,hasta).map(renderCard).join("");
+  while(div.firstChild) grid.appendChild(div.firstChild);
   pubsMostradas = hasta;
   btnMore.style.display = lista.length > pubsMostradas ? "flex" : "none";
 };
 
-function renderCard(p, idx) {
-  const neg = negociosMap[p.negocioId] || {};
-  const esServ = SERVICIOS_CATS.includes(p.categoria);
-  const imgs = p.imagenes || (p.imageUrl ? [p.imageUrl] : []);
-  const wa = neg.whatsapp ? neg.whatsapp.replace(/\D/g,"") : "";
-  const slug = neg.slug || "";
-  const inicial = (neg.nombre || p.nombreNegocio || "?")[0].toUpperCase();
-  const color = COLORES[idx % COLORES.length];
-  const verificado = neg.verificado;
-
-  let imgHtml = "";
-  if (imgs.length >= 3) {
-    imgHtml = `<div class="pfc-imgs-3">
-      ${imgs.slice(0,3).map(u=>`<div class="img-slot"><img src="${u}" alt=""></div>`).join("")}
-    </div>`;
-  } else if (imgs.length === 2) {
-    imgHtml = `<div class="pfc-imgs-2">
-      ${imgs.slice(0,2).map(u=>`<div class="img-slot"><img src="${u}" alt=""></div>`).join("")}
-    </div>`;
-  } else if (imgs.length === 1) {
-    imgHtml = `<div class="pfc-img" style="background-image:url('${imgs[0]}');"></div>`;
-  } else {
-    imgHtml = `<div class="pfc-img" style="background:${color};display:flex;align-items:center;justify-content:center;height:240px;font-family:'Fraunces',serif;font-size:56px;color:rgba(255,255,255,0.3);">${inicial}</div>`;
-  }
-
+function renderCard(p) {
+  const neg   = negociosMap[p.negocioId]||{};
+  const esServ = SERVICIOS.has(p.categoria||"");
+  const imgs  = p.imagenes||(p.imageUrl?[p.imageUrl]:[]);
+  const wa    = (neg.whatsapp||"").replace(/\D/g,"");
+  const slug  = neg.slug||"";
+  const inicial = (neg.nombre||p.nombreNegocio||"?")[0].toUpperCase();
+  const color = COLORES_NEG[Math.abs((neg.nombre||"X").charCodeAt(0)) % COLORES_NEG.length];
   const fecha = p.creadoEn?.seconds
-    ? new Date(p.creadoEn.seconds*1000).toLocaleDateString("es-AR",{day:"numeric",month:"short"})
+    ? new Date(p.creadoEn.seconds*1000).toLocaleDateString("es-AR",{day:"numeric",month:"short",year:"numeric"})
     : "";
 
-  return `<div class="pub-feed-card fade-up" onclick="window.location.href='negocio.html${slug?'?slug='+slug:''}'">
-    <div class="pfc-header">
-      <div class="pfc-avatar" style="${neg.logoUrl?`background-image:url('${neg.logoUrl}');`:`background:${color}`}">${!neg.logoUrl?inicial:""}</div>
-      <div class="pfc-info">
-        <div class="pfc-negocio-row">
-          <div class="pfc-negocio">${neg.nombre||p.nombreNegocio||"Negocio"}</div>
-          ${verificado?VER_BADGE:""}
+  let imgHtml="";
+  if (imgs.length>=3) {
+    imgHtml=`<div class="pc-imgs pc-img-3">
+      <div class="main-img"><img src="${imgs[0]}" alt="" loading="lazy"></div>
+      <img src="${imgs[1]}" alt="" loading="lazy">
+      <img src="${imgs[2]}" alt="" loading="lazy">
+    </div>`;
+  } else if (imgs.length===2) {
+    imgHtml=`<div class="pc-imgs pc-img-2"><img src="${imgs[0]}" alt="" loading="lazy"><img src="${imgs[1]}" alt="" loading="lazy"></div>`;
+  } else if (imgs.length===1) {
+    imgHtml=`<div class="pc-imgs pc-img-1"><img src="${imgs[0]}" alt="" loading="lazy" style="width:100%;max-height:400px;object-fit:cover;display:block;"></div>`;
+  } else {
+    imgHtml=`<div class="pc-imgs pc-img-1"><div class="pc-img-placeholder" style="background:linear-gradient(135deg,${color}22,${color}44);"><svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5" width="48" height="48" opacity=".5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div></div>`;
+  }
+
+  const negUrl = `negocio.html${slug?"?slug="+slug:""}`;
+
+  return `<div class="pub-card">
+    <div class="pc-head">
+      <a href="${negUrl}" class="pc-avatar" style="${neg.logoUrl?`background-image:url('${neg.logoUrl}');background-color:transparent;`:`background:${color};`}">${!neg.logoUrl?inicial:""}</a>
+      <div class="pc-meta">
+        <a href="${negUrl}" class="pc-negocio">
+          ${neg.nombre||p.nombreNegocio||"Negocio"}
+          ${neg.verificado?`<span class="ver-badge">${VER_SVG}</span>`:""}
+        </a>
+        <div class="pc-sub">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${p.localidad||""}${fecha?" · "+fecha:""}
         </div>
-        <div class="pfc-meta">${fecha?fecha+" · ":""}${p.localidad||""}</div>
       </div>
-      <span class="pfc-cat-badge ${esServ?"verde-b":""}">${p.categoria||""}</span>
+      <span class="pc-badge ${esServ?"pb-serv":"pb-prod"}">${p.categoria||""}</span>
     </div>
     ${imgHtml}
-    <div class="pfc-body">
-      <div class="pfc-titulo">${p.titulo||""}</div>
-      ${p.descripcion?`<div class="pfc-desc">${p.descripcion}</div>`:""}
-      <div class="pfc-precio">$${Number(p.precio||0).toLocaleString("es-AR")}</div>
+    <div class="pc-body">
+      <div class="pc-title">${p.titulo||""}</div>
+      ${p.descripcion?`<div class="pc-desc">${p.descripcion}</div>`:""}
+      <div class="pc-price">$${Number(p.precio||0).toLocaleString("es-AR")}</div>
     </div>
-    <div class="pfc-footer">
-      <div class="pfc-actions" onclick="event.stopPropagation()">
-        ${wa?`<a href="https://wa.me/${wa}" target="_blank" class="pfc-wa">${WA_SVG} WhatsApp</a>`:""}
-        <a href="negocio.html${slug?'?slug='+slug:''}" class="pfc-ver">Ver negocio →</a>
-      </div>
-      <div class="pfc-localidad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${p.localidad||""}</div>
+    <div class="pc-stats">
+      <span class="pc-stat-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        ${neg.localidad||""}
+      </span>
+      ${neg.seguidores?`<span class="pc-stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${neg.seguidores} seguidores</span>`:""}
+    </div>
+    <div class="pc-actions">
+      ${wa?`<a href="https://wa.me/${wa}" target="_blank" onclick="event.stopPropagation()" class="pc-action-btn wa">${WA_ICON} WhatsApp</a>`:""}
+      <a href="${negUrl}" class="pc-action-btn ver">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Ver negocio
+      </a>
+      ${esServ&&neg.slug?`<a href="turnos.html?slug=${neg.slug}" onclick="event.stopPropagation()" class="pc-action-btn" style="color:#2E8B57;" onmouseover="this.style.background='#e6f4ea'" onmouseout="this.style.background='transparent'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Reservar turno
+      </a>`:""}
     </div>
   </div>`;
 }
 
-function renderNegociosSidebar() {
-  const container = document.getElementById("negociosSidebar");
-  if (!container) return;
-  const negs = Object.values(negociosMap).filter(n=>n.aprobado).slice(0,5);
-  if (!negs.length) { container.innerHTML=`<div style="font-size:13px;color:var(--texto-3);text-align:center;padding:16px;">Sin negocios aún</div>`; return; }
-  container.innerHTML = negs.map((n,i) => `
-    <a class="negocio-mini" href="negocio.html?slug=${n.slug||""}">
-      <div class="nm-avatar" style="${n.logoUrl?`background-image:url('${n.logoUrl}');`:`background:${COLORES[i%COLORES.length]}`}">${!n.logoUrl?(n.nombre||"?")[0].toUpperCase():""}</div>
-      <div>
-        <div class="nm-nombre">${n.nombre||""}</div>
-        <div class="nm-cat">${n.categoria||""}</div>
-        <div class="nm-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${n.localidad||""}</div>
-      </div>
-    </a>`).join("");
-}
-
-function renderCategoriasSidebar() {
-  const container = document.getElementById("catsSidebar");
-  if (!container) return;
+function renderCats() {
+  const el = document.getElementById("catsList");
+  if (!el) return;
   const conteo = {};
   todasPubs.forEach(p => { const c=p.categoria||"Otros"; conteo[c]=(conteo[c]||0)+1; });
-  const cats = Object.entries(conteo).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  container.innerHTML = cats.map(([cat,cnt]) => `
-    <a class="cat-pill" href="explorar.html?categoria=${encodeURIComponent(cat)}" onclick="event.preventDefault();setCategoria('${cat}')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+  const cats = Object.entries(conteo).sort((a,b)=>b[1]-a[1]);
+  el.innerHTML = cats.map(([cat,n]) => `
+    <button class="cat-btn" onclick="setCat('${cat.replace(/'/g,"\\'")}',this)">
+      <div class="cat-dot" style="background:${SERVICIOS.has(cat)?'var(--green)':'var(--blue)'}"></div>
       ${cat}
-      <span class="cat-count">${cnt}</span>
-    </a>`).join("");
+      <span class="cat-count-small">${n}</span>
+    </button>`).join("") +
+    `<button class="cat-btn" onclick="setCat('',this)" style="color:var(--text-2);margin-top:4px;">
+      <div class="cat-dot" style="background:var(--text-3)"></div>Limpiar filtro
+    </button>`;
+}
+
+function renderNegSidebar() {
+  const el = document.getElementById("negSidebar");
+  if (!el) return;
+  const negs = Object.values(negociosMap).filter(n=>n.aprobado).slice(0,6);
+  if (!negs.length) { el.innerHTML=`<p style="font-size:13px;color:var(--text-2);padding:8px 0;">Sin negocios aún</p>`; return; }
+  el.innerHTML = negs.map((n,i) => {
+    const color = COLORES_NEG[i%COLORES_NEG.length];
+    const inicial = (n.nombre||"?")[0].toUpperCase();
+    return `<a class="neg-mini" href="negocio.html?slug=${n.slug||""}">
+      <div class="nm-av" style="${n.logoUrl?`background-image:url('${n.logoUrl}');background-color:#eee;`:`background:${color};`}">${!n.logoUrl?inicial:""}</div>
+      <div class="nm-info">
+        <div class="nm-name">
+          ${n.nombre||""}
+          ${n.verificado?`<span class="nm-badge">${VER_SVG}</span>`:""}
+        </div>
+        <div class="nm-sub">${n.categoria||""} · ${n.localidad||""}</div>
+      </div>
+    </a>`;
+  }).join("");
 }
 
 // ── CONTROLES ──
-window.filtrarFeed = () => renderFeed();
+window.setFiltro = function(tipo, btn) {
+  filtroTipo = tipo; filtroCategoria = "";
+  document.querySelectorAll(".lc-item").forEach(b=>b.classList.remove("active"));
+  if(btn) btn.classList.add("active");
+  syncTabs(tipo);
+  document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
+  renderFeed();
+};
 
-window.setTipo = function(tipo, btn) {
-  filtroTipo = tipo;
-  document.querySelectorAll(".stab").forEach(b=>b.classList.remove("activo"));
-  if(btn) btn.classList.add("activo");
+window.setTab = function(tipo, btn) {
+  filtroTipo = tipo; filtroCategoria = "";
+  document.querySelectorAll(".ftab").forEach(b=>b.classList.remove("active"));
+  if(btn) btn.classList.add("active");
+  document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
+  renderFeed();
+};
+
+function syncTabs(tipo) {
+  document.querySelectorAll(".ftab").forEach(b => {
+    b.classList.toggle("active", b.id==="tab-"+tipo);
+  });
+}
+
+window.setCat = function(cat, btn) {
+  filtroCategoria = cat;
+  filtroTipo = "todo";
+  document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
+  if(btn&&cat) btn.classList.add("active");
+  // Desactivar tabs y lc-items
+  document.querySelectorAll(".ftab").forEach(b=>b.classList.remove("active"));
+  const tabTodo = document.getElementById("tab-todo");
+  if(tabTodo) tabTodo.classList.add("active");
+  document.querySelectorAll(".lc-item").forEach(b=>b.classList.remove("active"));
+  const btnTodo = document.getElementById("btnTodo");
+  if(btnTodo) btnTodo.classList.add("active");
   renderFeed();
 };
 
 window.setSort = function(sort, btn) {
   filtroSort = sort;
-  document.querySelectorAll(".sort-btn").forEach(b=>b.classList.remove("activo"));
-  if(btn) btn.classList.add("activo");
+  document.querySelectorAll(".sort-pill").forEach(b=>b.classList.remove("active"));
+  if(btn) btn.classList.add("active");
   renderFeed();
 };
 
-window.setCategoria = function(cat) {
-  document.getElementById("inputBusqueda").value = cat;
-  document.getElementById("feed").scrollIntoView({behavior:"smooth"});
-  renderFeed();
-};
+window.filtrar = renderFeed;
 
-// Nav scroll
-window.addEventListener("scroll", () => {
-  document.getElementById("navbar").classList.toggle("scrolled", window.scrollY > 10);
-});
-
-// Scroll animations
-const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add("in"); });
-},{threshold:0.05});
-document.querySelectorAll(".fade-up").forEach(el=>obs.observe(el));
-
-window.toggleMenu = () => document.getElementById("mobileMenu").classList.toggle("open");
-
-cargarTodo();
-</script>
-
-<script type="module">
-// Segundo módulo para Firebase Auth navbar — por si el primero falla
+init();
 </script>
 </body>
 </html>
