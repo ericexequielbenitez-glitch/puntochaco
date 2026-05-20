@@ -5,23 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reservar turno — PuntoChaco</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Sora:wght@700;800&display=swap" rel="stylesheet">
 <style>
 :root {
-  --blanco:#FFFFFF; --fondo:#F4F9FC; --fondo-2:#EBF5FB;
-  --celeste:#5BADD6; --celeste-claro:#C8E6F5; --celeste-suave:#EBF5FC;
-  --verde:#3A8F5A; --verde-suave:#EAF5EF;
-  --texto:#1A2B4A; --texto-2:#3A5A72; --texto-3:#7A9BB0;
-  --borde:#D8EBF5; --borde-2:#C2DCF0;
+  --blanco:#FFFFFF; --fondo:#f0f2f5; --fondo-2:#EBF5FB;
+  --celeste:#1877f2; --celeste-claro:#C8E6F5; --celeste-suave:#EBF5FC;
+  --verde:#2E8B57; --verde-suave:#EAF5EF;
+  --texto:#050505; --texto-2:#65676b; --texto-3:#90949c;
+  --borde:#dddfe2; --borde-2:#C2DCF0;
   --error:#FF3B3B;
   --r-sm:10px; --r-md:16px; --r-lg:24px;
   --sombra:0 4px 20px rgba(42,172,226,0.08);
   --sombra-lg:0 16px 48px rgba(42,172,226,0.14);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--fondo);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh;}
+body{font-family:'Inter',sans-serif;background:var(--fondo);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh;}
 
-nav{position:sticky;top:0;z-index:50;height:64px;background:rgba(255,255,255,0.96);backdrop-filter:blur(16px);border-bottom:1.5px solid var(--borde);display:flex;align-items:center;justify-content:space-between;padding:0 32px;}
+nav{position:sticky;top:0;z-index:50;height:56px;background:#fff;border-bottom:1px solid #dddfe2;box-shadow:0 1px 2px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;}
 .nav-logo{display:flex;align-items:center;text-decoration:none;}
 .nav-logo img{height:48px;width:auto;}
 
@@ -29,8 +29,8 @@ nav{position:sticky;top:0;z-index:50;height:64px;background:rgba(255,255,255,0.9
 
 /* NEGOCIO HEADER */
 .negocio-header{background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-lg);padding:20px 24px;display:flex;align-items:center;gap:16px;margin-bottom:24px;box-shadow:var(--sombra);}
-.neg-avatar-sm{width:56px;height:56px;border-radius:var(--r-sm);background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--blanco);flex-shrink:0;background-size:cover;background-position:center;}
-.neg-info-sm h2{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;}
+.neg-avatar-sm{width:56px;height:56px;border-radius:var(--r-sm);background:linear-gradient(135deg,var(--celeste),var(--verde));display:flex;align-items:center;justify-content:center;font-family:'Sora',serif;font-size:20px;font-weight:700;color:var(--blanco);flex-shrink:0;background-size:cover;background-position:center;}
+.neg-info-sm h2{font-family:'Sora',serif;font-size:18px;font-weight:700;}
 .neg-info-sm p{font-size:13px;color:var(--texto-3);margin-top:2px;}
 
 /* STEPS */
@@ -55,7 +55,7 @@ nav{position:sticky;top:0;z-index:50;height:64px;background:rgba(255,255,255,0.9
 
 /* CALENDARIO */
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-.cal-mes{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;}
+.cal-mes{font-family:'Sora',serif;font-size:18px;font-weight:700;}
 .cal-btn{width:36px;height:36px;border:1.5px solid var(--borde);border-radius:50%;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;color:var(--texto-2);}
 .cal-btn:hover{border-color:var(--celeste);color:var(--celeste);background:var(--celeste-suave);}
 .cal-btn svg{width:16px;height:16px;}
@@ -105,16 +105,16 @@ input[type="text"],input[type="tel"],input[type="email"],textarea{
   width:100%;height:44px;padding:0 14px;
   background:var(--fondo);border:1.5px solid transparent;
   border-radius:var(--r-sm);
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:var(--texto);
+  font-family:'Inter',sans-serif;font-size:14px;color:var(--texto);
   outline:none;transition:all 0.2s;
 }
 input:focus{border-color:var(--celeste);background:var(--blanco);box-shadow:0 0 0 3px rgba(91,173,214,0.1);}
 textarea{height:80px;padding:10px 14px;resize:none;}
 
 /* BOTONES */
-.btn{display:inline-flex;align-items:center;gap:7px;padding:0 22px;height:46px;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;border:none;transition:all 0.2s;white-space:nowrap;}
-.btn-celeste{background:var(--celeste);color:var(--blanco);box-shadow:0 4px 14px rgba(91,173,214,0.3);}
-.btn-celeste:hover{background:#4A9DC6;transform:translateY(-1px);}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:0 22px;height:46px;border-radius:100px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;border:none;transition:all 0.2s;white-space:nowrap;}
+.btn-celeste{background:#1877f2;color:#fff;box-shadow:0 4px 14px rgba(24,119,242,.25);}
+.btn-celeste:hover{background:#166fe5;transform:translateY(-1px);}
 .btn-celeste:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
 .btn-ghost{background:transparent;color:var(--texto-2);border:1.5px solid var(--borde-2);}
 .btn-ghost:hover{border-color:var(--celeste);color:var(--celeste);}
@@ -125,7 +125,7 @@ textarea{height:80px;padding:10px 14px;resize:none;}
 .exito-icon{width:80px;height:80px;border-radius:50%;background:var(--verde-suave);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;animation:popIn 0.4s cubic-bezier(.34,1.56,.64,1);}
 @keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
 .exito-icon svg{width:36px;height:36px;stroke:var(--verde);}
-.exito-wrap h2{font-family:'Playfair Display',serif;font-size:24px;margin-bottom:8px;}
+.exito-wrap h2{font-family:'Sora',serif;font-size:24px;margin-bottom:8px;}
 .exito-wrap p{font-size:15px;color:var(--texto-2);line-height:1.6;}
 
 /* LOADING */
@@ -651,7 +651,7 @@ function mostrarError(msg) {
   document.querySelector('.page-wrap').innerHTML = `
     <div style="text-align:center;padding:60px 20px;">
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="1.5" width="48" height="48" style="margin-bottom:16px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <h2 style="font-family:'Playfair Display',serif;margin-bottom:8px;">Oops</h2>
+      <h2 style="font-family:'Sora',serif;margin-bottom:8px;">Oops</h2>
       <p style="color:var(--texto-2);">${msg}</p>
       <a href="index.html" style="display:inline-flex;margin-top:20px;padding:0 24px;height:44px;background:var(--celeste);color:white;border-radius:100px;text-decoration:none;align-items:center;font-weight:600;">Volver al inicio</a>
     </div>`;
