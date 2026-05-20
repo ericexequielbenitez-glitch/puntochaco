@@ -33,7 +33,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--te
 .btn-tb:hover{background:var(--g2);}
 
 /* COVER + PERFIL */
-.perfil-cover{height:200px;background:#1c1e21;position:relative;}
+.perfil-cover{height:160px;background:#3B9FD4;position:relative;}
 .perfil-body{background:var(--w);border-bottom:1px solid var(--borde);}
 .perfil-inner{max-width:1100px;margin:0 auto;padding:0 24px;}
 
@@ -198,9 +198,10 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--te
 
 <!-- SKELETON mientras carga -->
 <div id="perfilSkeleton" style="background:#fff;border-bottom:1px solid #dddfe2;">
+  <div style="height:160px;background:#3B9FD4;"></div>
   <div style="max-width:1100px;margin:0 auto;padding:0 24px;">
     <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:0 0 16px;margin-top:-44px;">
-      <div style="width:88px;height:88px;border-radius:50%;border:4px solid #fff;background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;"></div>
+      <div style="width:88px;height:88px;border-radius:50%;border:4px solid #fff;background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;margin-top:-40px;"></div>
     </div>
     <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:22px;width:200px;border-radius:6px;margin-bottom:10px;"></div>
     <div style="background:linear-gradient(90deg,#f0f2f5 25%,#e4e6eb 50%,#f0f2f5 75%);background-size:400% 100%;animation:sk 1.2s ease infinite;height:14px;width:280px;border-radius:4px;margin-bottom:16px;"></div>
@@ -228,7 +229,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--g);color:var(--te
 
 
 <!-- COVER -->
-<div class="perfil-cover" id="perfilCover"></div>
+<div class="perfil-cover" id="perfilCover" style="background:#3B9FD4;"></div>
 
 <!-- PERFIL -->
 <div class="perfil-body" id="perfilBody" style="display:none;">
