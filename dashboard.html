@@ -754,6 +754,26 @@ window.guardarStock = async function(e) {
   e.preventDefault();
   const btn = document.getElementById("btnGuardarStock");
   if(btn) { btn.disabled=true; btn.textContent="Guardando..."; }
+
+  // Si no hay negocio cargado, intentar buscarlo
+  if (!negocioActual?.id) {
+    try {
+      const nd = await getDoc(doc(db,"negocios",usuarioActual.uid));
+      if (nd.exists()) {
+        negocioActual = { id:nd.id, ...nd.data() };
+      } else {
+        const nq = query(collection(db,"negocios"), where("propietarioId","==",usuarioActual.uid));
+        const ns = await getDocs(nq);
+        if (!ns.empty) negocioActual = { id:ns.docs[0].id, ...ns.docs[0].data() };
+      }
+    } catch(er) {}
+  }
+
+  if (!negocioActual?.id) {
+    mostrarToast("No se encontró tu negocio. Recargá la página.", "error");
+    if(btn) { btn.disabled=false; btn.textContent="Guardar"; }
+    return;
+  }
   const g = id => document.getElementById(id)?.value||"";
   const id        = g("stockId");
   const nombre    = g("stockNombre").trim();
